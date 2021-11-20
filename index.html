@@ -24,7 +24,9 @@
 .welcome-text .sub{font-size:12pt;opacity:.5}
 .light-mode-btn{display:none!important}
 select, input{outline:0;width:300px;height:35px}
-#chapterlist div{font-size:14pt;height:24px;margin:10;cursor: pointer;}
+#chapterlist div {font-size:14pt;height:24px;}
+#chapterlist div a:hover{color:#6600cc;}
+#chapterlist div a:visited {color: pink;}
 </style>
 </head>
 <body>
@@ -32,7 +34,7 @@ select, input{outline:0;width:300px;height:35px}
 <div class="pusher">
 <div class="page-header">
 <div class="ui title container">
-<h1 title="mynovel.co">mynovel.co</h1>
+<h1 title="mynovel.co">free mynovel.co</h1>
 </div>
 
 <div class="ui one column grid page-header-menu">
@@ -106,7 +108,7 @@ $('#getdata')[0].addEventListener('click', (e)=>{
       getnovellist(obj);
       chapterlist += '<h3>' + res.ProductName + '</h3>'
       Array.prototype.reverse.call(res.EpTopic).forEach((chapter, idx)=>{
-        chapterlist += '<div onclick=getchapter("' + chapter.EpId+ '")>' + chapter.EpName + ' : ' + timeConverter(chapter.createDate) + '</div>';
+        chapterlist += '<div><a href="#' + chapter.EpId+ '" onclick=getchapter("' + chapter.EpId+ '")>' + chapter.EpName + ' : ' + timeConverter(chapter.createDate) + '</a></div>';
       });
       $('#chapterlist').html(chapterlist);
     },
