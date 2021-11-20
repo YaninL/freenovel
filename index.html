@@ -106,7 +106,7 @@ $('#getdata')[0].addEventListener('click', (e)=>{
       getnovellist(obj);
       chapterlist += '<h3>' + res.ProductName + '</h3>'
       Array.prototype.reverse.call(res.EpTopic).forEach((chapter, idx)=>{
-        chapterlist += '<div onclick=getchapter("' + chapter.EpId+ '")>' + (idx + 1) + '. ' + chapter.EpName + ' : ' + timeConverter(chapter.createDate) + '</div>';
+        chapterlist += '<div onclick=getchapter("' + chapter.EpId+ '")>' + chapter.EpName + ' : ' + timeConverter(chapter.createDate) + '</div>';
       });
       $('#chapterlist').html(chapterlist);
     },
@@ -136,7 +136,8 @@ let getchapter = (id)=>{
     contentType: 'application/json; charset=utf-8',
     success: function (res) {
       $('#temp').html(res.EpDetail);
-      let blob = new Blob([res.EpName +'\n' +$('#temp')[0].innerText], { type: 'text/plain;charset=utf-8' });
+      let content = res.EpName +'\r\n' +$('#temp')[0].innerText.replace(/\n/g, '\r\n');
+      let blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
       saveAs(blob, res.EpName + '.txt');
     },
     error: function (error) {
