@@ -5,7 +5,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta property="description" content="" />
-<meta name="referrer" content="no-referrer, same-origin" />
+<meta name="referrer" content="no-referrer" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2/dist/semantic.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2/dist/semantic.min.js"></script>
@@ -94,8 +94,6 @@ $('#getdata')[0].addEventListener('click', (e)=>{
     dataType: 'json',
     headers: {
       'Host': 'asia-southeast2-mynovel01.cloudfunctions.net',
-      'Origin': 'https://mynovel.co',
-      'Referer': 'https://mynovel.co/',
       'DNT': '1',
       'Connection': 'keep-alive',
       'Sec-Fetch-Dest': 'empty',
@@ -127,8 +125,6 @@ let getchapter = (id)=>{
     data: JSON.stringify({"appKey": "xdde8cNN5k7AuVTMgz7b", "id": id}),
     headers: {
       'Host': 'asia-southeast2-mynovel01.cloudfunctions.net',
-      'Origin': 'https://mynovel.co',
-      'Referer': 'https://mynovel.co/',
       'DNT': '1',
       'Connection': 'keep-alive',
       'Sec-Fetch-Dest': 'empty',
