@@ -122,7 +122,7 @@ let getchapter = (id)=>{
     url: 'https://asia-southeast2-mynovel01.cloudfunctions.net/productEP/getProductEpById',
     method: 'POST',
     dataType: 'json',
-    data: JSON.stringify({"appKey": "xdde8cNN5k7AuVTMgz7b", "id": id}),
+    data: JSON.stringify({'appKey': 'xdde8cNN5k7AuVTMgz7b', 'id': id}),
     headers: {
       'Host': 'asia-southeast2-mynovel01.cloudfunctions.net',
       'DNT': '1',
@@ -136,8 +136,8 @@ let getchapter = (id)=>{
     contentType: 'application/json; charset=utf-8',
     success: function (res) {
       $('#temp').html(res.EpDetail);
-      let content = res.EpName +'\r\n' +$('#temp')[0].innerText.replace(/\n/g, '\r\n');
-      let blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      let content = cleanupcontent(res.EpName +'\n' +$('#temp')[0].innerText);
+      let blob = new Blob([content.replace(/\n/g, '\r\n')], { type: 'text/plain;charset=utf-8' });
       saveAs(blob, res.EpName + '.txt');
     },
     error: function (error) {
@@ -168,6 +168,22 @@ let selectnovel = (select)=>{
   var id = select.value;  
   $('#input')[0].value = id;
   $('#getdata')[0].click();
+}
+
+let cleanupcontent = (input)=>{
+    let input_line = input.replace('\r', '\n').split('\n').filter(String);
+    let output = [];
+    let cleanupregex = {'[\\u200b|\\u200c|\\u200d|\\uFEFF|\\u2028]': '', '\\u00a0': ' '};
+    input_line.forEach((in_line) => {
+      let textline = in_line.trim();
+      Object.entries(cleanupregex).forEach((line) => {
+        textline = textline.replace(new RegExp(line[0], 'g'), line[1]);
+      });
+      output.push(textline.trim());
+    });
+    output = output.filter(String);
+    if (output[0] == output[1]) output.splice(1, 1);
+    return output.join('\n\n');
 }
 
 getnovellist();
