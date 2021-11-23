@@ -162,7 +162,9 @@ let getnovellist = (add)=>{
     localStorage.setItem('novellist', JSON.stringify(list));
     }
   let selectlist = '';
-  Object.entries(list).forEach((e)=>{
+  let sortable = Object.entries(list);
+  sortable.sort((a, b)=>a[1].localeCompare(b[1]));
+  sortable.forEach((e)=>{
     let selected = (e[0] == Object.keys(add)[0]) ? 'selected=selected' : '';
     selectlist += '<option value="' + e[0] + '" ' + selected + '>' + e[1] + '</option>'
   });
@@ -196,4 +198,3 @@ getnovellist();
 </script>
 </body>
 </html>
-
