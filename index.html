@@ -57,7 +57,7 @@ select, input{outline:0;width:300px;height:35px}
 <td class="collapsing">
   <div>PID</div>
   <div><input name="" id="input"> <select id="novellist" onchange="selectnovel(this)"> </select> <button class="ui blue button" id="getdata">Get data</button> </div>
-  <div id="status"></div>
+  <div id="status">-</div>
 </td>
 </tr>
 <tr>
@@ -90,6 +90,7 @@ $('#getdata')[0].addEventListener('click', (e)=>{
   let inputText = $('#input')[0].value;
   if(inputText == '') return;
   let chapterlist = '';
+  $('#status').html('-');
   $.ajax({
     url: 'https://asia-southeast2-mynovel01.cloudfunctions.net/product/' + inputText,
     type: 'GET',
@@ -102,7 +103,7 @@ $('#getdata')[0].addEventListener('click', (e)=>{
         return;
       }else{
         let obj = {};
-        obj[res.id] = res.ProductName + (res.ProductTypeSet == 'Cartoon') ? ' (Manga)': '';
+        obj[res.id] = res.ProductName + ((res.ProductTypeSet == 'Cartoon') ? ' (Manga)': '');
         getnovellist(obj);
         chapterlist += '<h3>' + res.ProductName + '</h3>'
         Array.prototype.reverse.call(res.EpTopic).forEach((chapter, idx)=>{
@@ -128,11 +129,13 @@ let getchapter = (id)=>{
     contentType: 'application/json; charset=utf-8',
     success: function (res) {
       if(res.ProductTypeSet == 'Cartoon'){
+        let html = ' ';
         res.ImageUrlLists.forEach((img, idx)=>{
-          $('#status').text('Saveing ' + img);
-          saveAs(img, res.EpName + '-' + (idx + 1) + '.jpg');
+          //$('#status').text('Saveing ' + img);
+          //saveAs(img, res.EpName + '-' + (idx + 1) + '.jpg');
+          html += '<img src="' + img + '" /><br/>';
         });
-        $('#status').text('Done...');
+        $('#status').html(html);
       }else{
         $('#temp').html(res.EpDetail);
         let content = cleanupcontent(res.EpName +'\n' +$('#temp')[0].innerText);
