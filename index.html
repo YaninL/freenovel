@@ -93,24 +93,15 @@ $('#getdata')[0].addEventListener('click', (e)=>{
     url: 'https://asia-southeast2-mynovel01.cloudfunctions.net/product/' + inputText,
     type: 'GET',
     dataType: 'json',
-    headers: {
-      'Host': 'asia-southeast2-mynovel01.cloudfunctions.net',
-      'DNT': '1',
-      'Connection': 'keep-alive',
-      'Sec-Fetch-Dest': 'empty',
-      'Sec-Fetch-Mode': 'cors',
-      'Sec-Fetch-Site': 'cross-site',
-      'TE': 'trailers',
-    },
+    headers: {},
     contentType: 'application/json; charset=utf-8',
     success: function (res) {
-      console.log(res);
       if(res.ProductTypeSet == 'Ebook'){
         $('#status').html('Click to download <a href="' + res.FileUrl+ '" rel="noopener" target="_blank">' + res.ProductName + '</a>');
         return;
       }else{
         let obj = {};
-        obj[res.id] = res.ProductName;
+        obj[res.id] = res.ProductName + (res.ProductTypeSet == 'Cartoon') ? ' (Manga)': '';
         getnovellist(obj);
         chapterlist += '<h3>' + res.ProductName + '</h3>'
         Array.prototype.reverse.call(res.EpTopic).forEach((chapter, idx)=>{
@@ -131,14 +122,7 @@ let getchapter = (id)=>{
     dataType: 'json',
     data: JSON.stringify({'appKey': 'xdde8cNN5k7AuVTMgz7b', 'id': id}),
     headers: {
-      'Host': 'asia-southeast2-mynovel01.cloudfunctions.net',
-      'DNT': '1',
-      'Connection': 'keep-alive',
-      'Sec-Fetch-Dest': 'empty',
-      'Sec-Fetch-Mode': 'cors',
-      'Sec-Fetch-Site': 'cross-site',
       'Content-Type': 'application/json',
-      'TE': 'trailers',
     },
     contentType: 'application/json; charset=utf-8',
     success: function (res) {
@@ -152,7 +136,7 @@ let getchapter = (id)=>{
         $('#temp').html(res.EpDetail);
         let content = cleanupcontent(res.EpName +'\n' +$('#temp')[0].innerText);
         let blob = new Blob([content.replace(/\n/g, '\r\n')], { type: 'text/plain;charset=utf-8' });
-        $('#status').text('Saveing ' + res.EpName);
+        $('#status').text('Save ' + res.EpName);
         saveAs(blob, res.EpName + '.txt');
       }
     },
