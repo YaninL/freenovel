@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta property="description" content="" />
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="og:site_name" content="Tools" />
+<meta property="og:title" content="Tools" />
+<meta property="og:type" content="website" />
+<meta property="og:description" content="" />
+<meta property="og:image" content="tools_asset/cover.png" />
+<meta property="og:url" content="/" />
+<link rel="stylesheet" href="tools_asset/semantic.min.css" />
+<link rel="stylesheet" href="tools_asset/style.css" />
+<script src="tools_asset/jquery.min.js"></script>
+<script src="tools_asset/semantic.min.js"></script>
+<title>BBSubUtil</title>
+</head>
+<body>
+
+<div class="pusher">
+<div class="page-header">
+<div class="ui title container">
+<h1 title="BBSubUtil">BBSubUtil</h1>
+</div>
+
+<div class="ui one column grid page-header-menu">
+<div class="ui attached secondary inverted menu computer only column">
+
+</div>
+
+</div>
+<div class="shadow"></div>
+</div>
+
+<div class="ui container">
+
+<table class="ui large blue tablet stackable padded table">
+<thead><tr></tr></thead>
+<tbody>
+<tr>
+<td class="collapsing">
+  <div>JSON</div>
+  <div><textarea name=""  id="input"></textarea></div>
+</td>
+</tr>
+<tr>
+<td class="collapsing center aligned">
+  <button class="ui blue button" id="convert">Convert</button> 
+</td>
+<tr>
+<td class="collapsing">
+  <div>SRT</div>
+  <div><textarea name="" id="output"></textarea></div>
+</td>
+</tr>
+</tbody>
+</table>
+
+<div class="footer">
+<div class="ui divider"></div>
+<p><i>© 2021 Ann and contributors.<span class="info"></span></i></p>
+</div>
+</div>
+</div>
+
+<script>
+
+  const FormatTime = (sec)=>{
+    let v = sec.toFixed(3).toString().split('.')[1];
+    let date = new Date(0);
+    date.setSeconds(parseInt(sec));
+    return date.toISOString().replace(/.*(\d{2}:\d{2}:\d{2}).*/, '$1') + ',' + v;
+  }
+
+  $('#convert')[0].addEventListener('click', (e)=>{
+    let inputText = $('#input')[0].value;
+    let json = JSON.parse(inputText)
+    let lines = [];
+    json.body.forEach((line, index)=>{
+      lines.push((index + 1));
+      if (line.hasOwnProperty('from')) {
+        lines.push(FormatTime(line.from) + ' --> ' + FormatTime(line.to));
+      } else{
+        lines.push(FormatTime(0) + ' --> ' + FormatTime(line.to));
+      }
+      if (line.hasOwnProperty('content')){
+        lines.push((line.location == 2 ? '' : '{\\an'+ line.location + '}') + line.content.trim() + '\n');
+      }
+    });
+    $('#output')[0].value = lines.join('\n');
+  });
+
+
+  </script>
+</body>
+</html>
