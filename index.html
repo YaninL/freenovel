@@ -78,7 +78,7 @@ select, input{outline:0;width:300px;height:35px}
 
 let timeConverter = (time)=>{
   var a = new Date(time);
-  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   var year = a.getFullYear();
   var month = months[a.getMonth()];
   var date = a.getDate();
@@ -107,7 +107,7 @@ $('#getdata')[0].addEventListener('click', (e)=>{
         getnovellist(obj);
         chapterlist += '<h3>' + res.ProductName + '</h3>'
         Array.prototype.reverse.call(res.EpTopic).forEach((chapter, idx)=>{
-          chapterlist += '<div><a href="#' + chapter.EpId+ '" onclick=getchapter("' + chapter.EpId+ '")>' + chapter.EpName + ' : ' + timeConverter(chapter.createDate) + '</a></div>';
+          chapterlist += '<div><a href="#' + chapter.EpId+ '" onclick=getchapter("' + chapter.EpId+ '")>' + chapter.EpName + '</a> : ' + timeConverter(chapter.createDate) + '</div>';
         });
         $('#chapterlist').html(chapterlist);
       }
@@ -156,11 +156,10 @@ let getnovellist = (add)=>{
     localStorage.setItem('novellist', JSON.stringify({}));
   }
   let list = JSON.parse(localStorage.getItem('novellist'));
-  if(add){
-    if(list.hasOwnProperty(Object.keys(add)[0]) == true) return;
-    list = Object.assign({}, list, add);
-    localStorage.setItem('novellist', JSON.stringify(list));
-    }
+  if(add && list.hasOwnProperty(Object.keys(add)[0]) != true) {
+     list = Object.assign({}, list, add);
+     localStorage.setItem('novellist', JSON.stringify(list));
+  }
   let selectlist = '';
   let sortable = Object.entries(list);
   sortable.sort((a, b)=>a[1].localeCompare(b[1]));
@@ -172,7 +171,7 @@ let getnovellist = (add)=>{
 }
 
 let selectnovel = (select)=>{
-  var id = select.value;  
+  var id = select.value;
   $('#input')[0].value = id;
   $('#getdata')[0].click();
 }
