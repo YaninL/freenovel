@@ -14,7 +14,8 @@
 <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.7.1/dist/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip-utils@0.1.0/dist/jszip-utils.min.js"></script>
-<script src="https://yaninl.github.io/freenovel/resource.js"></script>
+<!--script src="https://yaninl.github.io/freenovel/resource.js"></script-->
+<script src="resource.js"></script>
 
 <title>nekoEPUB</title>
 <style>
@@ -39,9 +40,10 @@
 <div class="ui one column grid page-header-menu">
 <div class="ui attached secondary inverted menu computer only column">
 <div class="ui container">
+<a id="newbook" class="item"><i class="book icon"></i>New</a>  
 <a id="openfile" class="item"><i class="book icon"></i>Open</a>
 <a id="savefile" class="item"><i class="save icon"></i>Save</a>
-<div class="item active"><i class="exclamation circle icon"></i><span id="status">Ready....</span></div>
+<div class="item active"><i class="exclamation circle icon"></i><span id="status">-</span></div>
 <div class="right menu">
 <a id="addfile" class="item"><i class="file alternate icon"></i>Add Files</a>
 <a id="addcover" class="item"><i class="image outline icon"></i>Add Cover</a>
@@ -97,7 +99,7 @@
 </div>
 </div>
 
-<div class="overlay ui dimmer">
+<div class="pusher overlay ui dimmer">
 <div class="ui container" style="background-color: white;border-radius: .3rem;">
 <div class="ui one column segment">
 <div class="ui center aligned header" id="editertitle"></div>
@@ -116,12 +118,12 @@
 <input type="file" id="coverfile" style="display:none">
 <input type="file" id="mediafile" style="display:none" multiple=>
 <script>
+let version = '0.1.0'
 
-//window.onbeforeunload = ()=>{return ''};
+window.onbeforeunload = ()=>{return ''};
 
 let zip = new JSZip();
 let ebook = {};
-let epub = [];
 
 openfile.onclick = (e)=>{
   $('#epubfile')[0].click();
@@ -129,122 +131,131 @@ openfile.onclick = (e)=>{
 
 window.onload = ()=>{
   let data = atob(template);
-  openbook('NewBook.epub', data);
+  ebook.media = {};
+  ebook.section = {};
+  ebook.cover = {};
+  ebook.bookinfo = {};
+  ebook.bookinfo.filename = 'NewBook'; 
+  openbook(data);
 };
 
 epubfile.onchange = (file)=>{
-  openbook(file.target.files[0].name, file.target.files[0]);
+  let filename = file.target.files[0].name; 
+  let extension = filename.split('.').pop();
+  if(extension != 'epub'){
+    alert('ไฟล์ที่เลือกไม่ใช่ไฟล์ epub');
+    return;
+  }
+  ebook.media = {};
+  ebook.section = {};
+  ebook.cover = {};
+  ebook.bookinfo = {};
+  ebook.bookinfo.filename = filename.slice(0, -5); 
+  openbook(file.target.files[0]);
 };
 
-let openbook = (file, arraybuffer)=>{
-  ebook.filename = file;
-  let epub = zip.loadAsync(arraybuffer)
-    .then(async(zip)=>{
-      let metainfxml = await zip.files['META-INF/container.xml'].async('text');
-      $('#status').text('กำลังอ่านแฟ้ม packaging...');
-      let metainf = $($.parseXML(metainfxml))
-      let opffile = metainf.find('rootfile').attr('full-path');
-      ebook.opfpath = opffile.substring(0, opffile.lastIndexOf('/') + 1) || '';
-      let opfxml = await zip.files[opffile].async('text');
-      $('#status').text('กำลังอ่านแฟ้ม metadata...');
-      let opf = $($.parseXML(opfxml))
-      //ebook.xml = {};
-      //ebook.xml.opf = opf;
-      ebook.title = opf.find('dc\\:title').text();
-      ebook.creator = opf.find('dc\\:creator').text();
-      ebook.description = opf.find('dc\\:description').text();
-      ebook.publisher = opf.find('dc\\:publisher').text();
-      ebook.identifier = opf.find('dc\\:identifier').text();
-      if(ebook.identifier.indexOf('urn:uuid:') == -1
-      || ebook.identifier == 'urn:uuid:b16a9417-9ff8-4e1e-82e5-c591a1eae2e0'){
-        let uudi = generateUUID();
-        opf.find('dc\\:identifier').text(uudi);
-        ebook.identifier = uudi;
-      }
-      ebook.cover = {};
-      ebook.cover.id = opf.find('meta[name="cover"]').attr('content');
-      ebook.cover.href = opf.find('item[id="' + ebook.cover.id + '"]').attr('href');
-      ebook.cover.mediatype = opf.find('item[id="' + ebook.cover.id + '"]').attr('media-type');
-      let coverhtml = opf.find('reference[type="cover"]').attr('href');
-      ebook.cover.htmlid = opf.find('item[href="' + coverhtml + '"]').attr('id');
-      ebook.cover.html = filename(coverhtml);
-      ebook.toc = {};
-      ebook.toc.id = opf.find('spine').attr('toc');
-      ebook.toc.href = opf.find('item[id="' + ebook.toc.id + '"]').attr('href');
-      ebook.toc.mediatype = opf.find('item[id="' + ebook.toc.id + '"]').attr('media-type');
-      $('#filename').text(ebook.filename);
-      $('#title').text(ebook.title == '' ? 'ไม่มีชื่อเรื่อง' : ebook.title);
-      $('#creator').text(ebook.creator == '' ? 'ไม่มีผู้แต่ง' : ebook.creator);
-      $('#description').text(ebook.description == '' ? 'ไม่มีคำอธิบาย' : ebook.description);
-      $('#publisher').text(ebook.publisher == '' ? 'ไม่มีสำนักพิมพ์' : ebook.publisher);
-      $('#status').text('กำลังอ่านแฟ้มมีเดีย...');
-      let manifest = opf.find('item');
-      ebook.media = {};
-      manifest.each(async(idx, node)=>{
-        let mediatype = node.attributes['media-type'].value;
-        let href = node.attributes.href.value
-        if(node.id == ebook.toc.id) return;
-        let type = (mediatype == 'text/css' || mediatype == 'application/xhtml+xml') ? 'text' : 'arraybuffer';
-        let content = await zip.files[ebook.opfpath + href].async(type);
-        ebook.media[node.id] ={
-          href: filename(node.attributes.href.value),
-          mediatype: mediatype,
-          content: content
-        }
-      });
-      let spine = opf.find('itemref');
-      ebook.section = {};
-      spine.each(async(idx, node)=>{
-        let idref = node.attributes.idref.value;
-        let item = opf.find('item[id="' + idref + '"]');
-        //let content = await zip.files[ebook.opfpath + item.attr('href')].async('text');
-        ebook.section[idx] = {
-          id: idref,
-          href: item.attr('href'),
-          mediatype: item.attr('media-type')
-        };
-      });
-      $('#status').text('กำลังอ่านปกหนังสือ...');
-      let content = await zip.files[ebook.opfpath + ebook.cover.href].async('arraybuffer');
-      let buffer = new Uint8Array(content);
-      let blob = new Blob([buffer.buffer]);
-      //ebook.cover.content = content;
-      let img = new Image;
-      img.onload = (e)=>{
-        ebook.cover.width = e.target.naturalWidth;
-        ebook.cover.height = e.target.naturalHeight;
-      }
-      img.src = URL.createObjectURL(blob);
-      $('#cover').html(img);
-      let tocxml = await zip.files[ebook.opfpath + ebook.toc.href].async('text');
-      $('#status').text('กำลังอ่านรายการหนังสือ...');
-      let toc = $($.parseXML(tocxml))
-      //ebook.xml.toc = toc;
-      ebook.toc.toclist = {};
-      let navpoint = toc.find('navPoint');
-        navpoint.each((idx, node)=>{
-          let src = node.querySelector('content').attributes.src.value;
-          ebook.toc.toclist[src] = node.querySelector('navLabel text').textContent;
-      });
-      createlist();
-      return ebook;
-    })
-    .catch((e)=>{
-      console.log(e);
-      alert('ไฟล์ที่เลือกไม่ใช่ไฟล์ epub หรือรูปแบบไฟล์ไม่ถูกต้อง');
+let openbook = (data)=>{
+  zip.loadAsync(data).then(async(zip)=>{
+    let metainfxml = await zip.files['META-INF/container.xml'].async('text');
+    $('#status').text('กำลังอ่านแฟ้ม packaging...');
+    let metainf = $($.parseXML(metainfxml))
+    let opffile = metainf.find('rootfile').attr('full-path');
+    let opfpath = opffile.substring(0, opffile.lastIndexOf('/') + 1) || '';
+    let opfxml = await zip.files[opffile].async('text');
+
+    $('#status').text('กำลังอ่านแฟ้ม metadata...');
+    let opf = $($.parseXML(opfxml));
+    ebook.bookinfo.title = opf.find('dc\\:title').text();
+    ebook.bookinfo.creator = opf.find('dc\\:creator').text();
+    ebook.bookinfo.description = opf.find('dc\\:description').text();
+    ebook.bookinfo.publisher = opf.find('dc\\:publisher').text();
+    ebook.bookinfo.identifier = opf.find('dc\\:identifier').text();
+    if(ebook.bookinfo.identifier.indexOf('urn:uuid:') == -1
+      || ebook.bookinfo.identifier == 'urn:uuid:b16a9417-9ff8-4e1e-82e5-c591a1eae2e0'){
+      let uudi = generateUUID();
+      opf.find('dc\\:identifier').text(uudi);
+      ebook.bookinfo.identifier = uudi;
+    };
+
+    $('#status').text('กำลังอ่านรายการหนังสือ...');
+    let tocid = opf.find('spine').attr('toc');
+    let tochref = opf.find('item[id="' + tocid + '"]').attr('href');
+    let tocxml = await zip.files[opfpath + tochref].async('text');
+    let toc = $($.parseXML(tocxml));
+    let toclist = {};
+    let navpoint = toc.find('navPoint');
+    navpoint.each((idx, node)=>{
+      let src = node.querySelector('content').attributes.src.value;
+      toclist[filename(src)] = node.querySelector('navLabel text').textContent;
     });
 
-  epub.then((data)=>{
+    let info = ebook.bookinfo;
+    $('#filename').text(info.filename);
+    $('#title').text(info.title == '' ? 'ไม่มีชื่อเรื่อง' : info.title);
+    $('#creator').text(info.creator == '' ? 'ไม่มีผู้แต่ง' : info.creator);
+    $('#description').text(info.description == '' ? 'ไม่มีคำอธิบาย' : info.description);
+    $('#publisher').text(info.publisher == '' ? 'ไม่มีสำนักพิมพ์' : info.publisher);
+    $('#status').text('กำลังอ่านแฟ้มมีเดีย...');
+
+    let manifest = opf.find('item');
+    manifest.each(async(idx, node)=>{
+      let mediatype = node.attributes['media-type'].value;
+      let href = node.attributes.href.value
+      if(node.id == tocid) return;
+      let type = (mediatype == 'text/css' || mediatype == 'application/xhtml+xml') ? 'text' : 'arraybuffer';
+      let content = await zip.files[opfpath + href].async(type);
+      ebook.media[node.id] ={
+        href: filename(node.attributes.href.value),
+        mediatype: mediatype,
+        content: content
+      };
+    });
+
+    let spine = opf.find('itemref');
+    spine.each(async(idx, node)=>{
+      let idref = node.attributes.idref.value;
+      let item = opf.find('item[id="' + idref + '"]');
+      ebook.section[idx] = {
+        id: idref,
+        href: filename(item.attr('href')),
+        mediatype: item.attr('media-type'),
+        title: toclist[filename(item.attr('href'))] || ''
+      };
+    });
+
+    $('#status').text('กำลังอ่านปกหนังสือ...');
+    ebook.cover.imageid = opf.find('meta[name="cover"]').attr('content');
+    ebook.cover.imagehref = opf.find('item[id="' + ebook.cover.imageid + '"]').attr('href');
+    ebook.cover.mediatype = opf.find('item[id="' + ebook.cover.imageid + '"]').attr('media-type');
+    let coverhtml = opf.find('reference[type="cover"]').attr('href');
+    ebook.cover.htmlid = opf.find('item[href="' + coverhtml + '"]').attr('id');
+    ebook.cover.htmlhref = filename(coverhtml);
+    let content = await zip.files[opfpath + ebook.cover.imagehref].async('arraybuffer');
+    let buffer = new Uint8Array(content);
+    let blob = new Blob([buffer.buffer]);
+    let img = new Image;
+    img.onload = (e)=>{
+      ebook.cover.imagewidth = e.target.naturalWidth;
+      ebook.cover.imageheight = e.target.naturalHeight;
+    }
+    img.src = URL.createObjectURL(blob);
+    $('#cover').html(img);
+    createlist();
+    return ebook;
+  })
+  .then((data)=>{
     $('#status').text('อ่านข้อมูลหนังสือแล้ว...');
     console.log(data);
+  })
+  .catch((e)=>{
+    console.log(e);
+    alert('ไฟล์ที่เลือกไม่ใช่ไฟล์ epub หรือรูปแบบไฟล์ไม่ถูกต้อง');
   });
 };
 
 let createlist = ()=>{
-  $('#status').text('กำลังสร้างรายชื่อ...');
   let sectionlist = '';
   $.each(ebook.section, (idx, node)=>{
-    ebook.section[idx].title = ebook.toc.toclist[ebook.section[idx].href] || '';
     sectionlist += '<tr id="section' + parseInt(idx) + '"><td>' + (parseInt(idx) + 1) + '</td>';
     sectionlist += '<td class="sectionhref" contentEditable="true">' + filename(ebook.section[idx].href) + '</td>';
     sectionlist += '<td class="sectiontitle" contentEditable="true">' + ebook.section[idx].title + '</td>';
@@ -269,47 +280,58 @@ let createlist = ()=>{
   });
   $('#sectionlist .sectiontitle').each((idx, node)=>{
     node.addEventListener('keyup', (e)=>{
-      ebook.section[idx].href = e.target.textContent;
+      ebook.section[idx].title = e.target.textContent;
     });
   });
 };
 
 $('#filename, #title, #creator, #description, #publisher').each((idx, node)=>{
   node.addEventListener('keyup', (e)=>{
-    ebook[e.target.id] = e.target.textContent;
+    ebook.bookinfo[e.target.id] = e.target.textContent;
   });
 });
 
 editercancle.onclick = (e)=>{
   $('.overlay').dimmer('hide');
-}
+};
 
 editersave.onclick = (e)=>{
   let editer = $('#editercontent');
   ebook.media[editer.attr('data-id')].content = editer.text();
   $('.overlay').dimmer('hide');
-}
+};
 
 savefile.onclick = async(e)=>{
   $('#status').text('กำลังสร้างไฟล์หนังสือ...');
   let book = new JSZip();
   await book.file('mimetype', 'application/epub+zip');
   await book.file('META-INF/container.xml', container);
+  await book.file('OEBPS/content.opf', generateopf());
+  await book.file('OEBPS/toc.ncx', generatencx());
   $.each(ebook.media, async(idx, e)=>{
-    if(e.mediatype == 'application/xhtml+xml'){
-      await book.file('OEBPS/Text/' + filename(e.href), e.content);
-    }else if(e.mediatype == 'application/x-dtbncx+xml'){
-      await book.file('OEBPS/' + filename(e.href), e.content);
-    }else if(e.mediatype == 'text/css'){
-      await book.file('OEBPS/Styles/' + filename(e.href), e.content);
-    }else if(e.mediatype == 'application/vnd.ms-opentype' || e.mediatype == 'font/otf'
-     && e.mediatype == 'application/x-font-ttf' || e.mediatype == 'font/ttf'){
-      await book.file('OEBPS/Fonts/' + filename(e.href), e.content, {binary: true});
-    }else if(e.mediatype == 'image/jpeg' || e.mediatype == 'image/png' || e.mediatype == 'image/gif'){
-      await book.file('OEBPS/Images/' + filename(e.href), e.content, {binary: true});
-    }else{
-      await book.file('OEBPS/Misc/' + filename(e.href), e.content);
-    }
+    switch (e.mediatype) {
+      case 'application/xhtml+xml':
+      case 'text/html':
+        await book.file('OEBPS/Text/' + e.href, e.content);
+      break;
+      case 'text/css':
+        await book.file('OEBPS/Styles/' + e.href, e.content);
+      break;
+      case 'application/vnd.ms-opentype':
+      case 'application/x-font-ttf':
+      case 'font/otf':
+      case 'font/ttf':
+        await book.file('OEBPS/Fonts/' + e.href, e.content, {binary: true});
+      break;
+      case 'image/jpeg':
+      case 'image/png':
+      case 'image/gif':
+        await book.file('OEBPS/Images/' + e.href, e.content, {binary: true});        
+      break;
+      default:
+        await book.file('OEBPS/Misc/' + e.href, e.content);
+      break;
+    };
   });
   await book.generateAsync({
     type: 'blob',
@@ -318,8 +340,77 @@ savefile.onclick = async(e)=>{
     compressionOptions: {level: 9}
   }).then((blob)=>{
     $('#status').text('สร้างไฟล์หนังสือแล้ว...');
-    saveAs(blob, ebook.filename);
-  })
+    saveAs(blob, ebook.bookinfo.filename + '.epub');
+  });
+};
+
+let generateopf = ()=>{
+  let info = ebook.bookinfo;
+  let metadata = '<dc:title>' + info.title + '</dc:title>\n';
+  metadata += '<dc:creator>' + info.creator + '</dc:creator>\n';
+  metadata += '<dc:description>' + info.description + '</dc:description>\n';
+  metadata += '<dc:publisher>' + info.publisher + '</dc:publisher>\n';
+  metadata += '<dc:language>th</dc:language>\n';
+  metadata += '<dc:date opf:event="modification">' + new Date().toISOString() + '</dc:date>\n';
+  metadata += '<dc:identifier id="BookId" opf:scheme="UUID">' + info.identifier + '</dc:identifier>\n';
+  metadata += '<meta name="Generator" content="nekoEPUB v.' + version + '"/>\n';
+  metadata += '<meta name="Template" content="Ann"/>\n';
+  metadata += '<meta name="cover" content="' + ebook.cover.imageid + '"/>\n';
+  let manifest = '<item id="toc" href="toc.ncx" media-type="application/x-dtbncx+xml"/>\n';
+  $.each(ebook.media, (idx, media)=>{
+    let href;
+    switch (media.mediatype) {
+      case 'application/xhtml+xml':
+      case 'text/html':
+        href = 'Text/' + media.href;
+      break;
+      case 'text/css':
+        href = 'Styles/' + media.href;
+      break;
+      case 'application/vnd.ms-opentype':
+      case 'application/x-font-ttf':
+      case 'font/otf':
+      case 'font/ttf':
+        href = 'Fonts/' + media.href;
+      break;
+      case 'image/jpeg':
+      case 'image/png':
+      case 'image/gif':
+        href = 'Images/' + media.href;
+      break;
+      default:
+        href = 'Misc/' + media.href;
+      break;
+    };
+    manifest += '<item id="' + idx + '" href="' + href + '" media-type="' + media.mediatype +'"/>\n';
+  });
+  let spine = '';
+  $.each(ebook.section, (idx, section)=>{
+    spine += '<itemref idref="' + section.id + '" linear="no"/>\n';
+  });
+  let guide = '<reference type="cover" title="ปก" href="' + ebook.cover.htmlhref + '"/>';
+  return opftemplate.replace('{metadata}', metadata).replace('{manifest}', manifest)
+    .replace('{spine}', spine).replace('{guide}', guide).replace(/\n\n/g, '\n');
+};
+
+let generatencx = ()=>{
+  let meta = '<meta content="' + ebook.bookinfo.identifier + '" name="dtb:uid"/>\n';
+  meta += '<meta name="dtb:depth" content="3" />\n';
+	meta += '<meta name="dtb:totalPageCount" content="0" />\n';
+	meta += '<meta name="dtb:maxPageNumber" content="0" />\n';
+  let title = '<text>' + ebook.bookinfo.title + '</text>\n';
+  let navmap = '';
+  $.each(ebook.section, (idx, point)=>{
+    point.title = (point.title == '' && idx == 0) ? 'หน้าปก' : point.title;
+    navmap += '<navPoint id="navPoint-' + idx + '" playOrder="' + idx + '">\n';
+    navmap += '<navLabel>\n';
+    navmap += '<text>' + point.title + '</text>\n';
+    navmap += '</navLabel>\n';
+    navmap += '<content src="Text/' + point.href + '"/>\n';
+    navmap += '</navPoint>\n';
+  });
+  return ncxtemplate.replace('{meta}', meta).replace('{title}', title)
+    .replace('{navmap}', navmap).replace(/\n\n/g, '\n');
 };
 
 $('#cover, #addcover').each((idx, node)=>{
@@ -328,37 +419,112 @@ $('#cover, #addcover').each((idx, node)=>{
   });
 });
 
-coverfile.onchange = (file)=>{
+coverfile.onchange = async(file)=>{
   let coverfile = file.target.files[0];
-  let reader = new FileReader();
-  reader.onload = (e)=>{
-    if(coverfile.type != 'image/jpeg' && coverfile.type != 'image/png'){
-      console.log(coverfile.type);
-      alert('ไฟล์ปกจะต้องเป็นรูปภาพ jpg หรือ png เท่านั้น');
-      return;
-    }
-    ebook.cover.content = e.target.result;
-    let blob = new Blob([e.target.result], {type: coverfile.type});
-    ebook.cover.mediatype = coverfile.type;
-    ebook.media[ebook.cover.id].content = e.target.result;
-    let img = new Image;
-    img.onload = async(e)=>{
-      ebook.cover.width = e.target.naturalWidth;
-      ebook.cover.height = e.target.naturalHeight;
-      ebook.media[ebook.cover.htmlid].content = coverhtml.replace(/{width}/g, ebook.cover.width)
-        .replace(/{height}/g, ebook.cover.height)
-        .replace(/{href}/g, filename(ebook.cover.href));
-    }
-    img.src = URL.createObjectURL(blob);
-    $('#cover').html(img);
-    $('#status').text('เปลี่ยนปกหนังสือแล้ว...');
-  };
-  reader.readAsArrayBuffer(coverfile);
+  let reader = await new Response(coverfile).arrayBuffer();
+  if(coverfile.type != 'image/jpeg' && coverfile.type != 'image/png'){
+    console.log(coverfile.type);
+    alert('ไฟล์ปกจะต้องเป็นรูปภาพ jpg หรือ png เท่านั้น');
+    return;
+  }
+  let blob = new Blob([reader], {type: coverfile.type});
+  ebook.cover.mediatype = coverfile.type;
+  ebook.media[ebook.cover.imageid].content = reader;
+  let img = new Image;
+  img.onload = async(e)=>{
+    ebook.cover.imagewidth = e.target.naturalWidth;
+    ebook.cover.imageheight = e.target.naturalHeight;
+    ebook.media[ebook.cover.htmlid].content = htmlheader 
+      + coverhtml.replace(/{width}/g, ebook.cover.imagewidth)
+      .replace(/{height}/g, ebook.cover.imageheight)
+      .replace(/{href}/g, filename(ebook.cover.imagehref))
+      + htmlfooter;
+  }
+  img.src = URL.createObjectURL(blob);
+  $('#cover').html(img);
+  $('#status').text('เปลี่ยนปกหนังสือแล้ว...');
 };
 
 addfile.onclick = (e)=>{
   $('#mediafile').click();
-}
+};
+
+mediafile.onchange = async(mediafiles)=>{
+  let filecount = Object.keys(mediafiles.target.files).length;
+  $.each(mediafiles.target.files, async(idx, file) => {
+    let media = {};
+    let filename = file.name.replace(/\s/g, '-');
+    let id = '';
+    let newsection = {};
+    media.mediatype = file.type;
+    switch(file.type) {
+      case 'text/plain':
+        media.mediatype = 'application/xhtml+xml';
+        media.href = filename.slice(0, -3) + 'xhtml';
+        id = 'x' + media.href;
+        let content = await new Response(file).text();
+        content = content.replace(/\r/g, '').split('\n').filter(String);
+        newsection = {
+          id: id,
+          href: media.href,
+          mediatype: media.mediatype,
+          title: content[0].trim()
+        };
+        media.content = htmlheader;
+        content.forEach((line, idx)=>{
+          if(line == '') return;
+          if(idx == 0){
+            media.content += '<h3 class="chapter_heading">' +  line.trim() + '</h3>\n';
+          }else{
+            media.content += '<p class="p_normal">' + line.trim() + '</p>\n';
+          };
+        });
+        media.content += htmlfooter;        
+      break;
+      case 'text/html':
+      case 'application/xhtml+xml':
+      case 'application/x-javascript':
+        id = 'x' + filename;
+        media.href = filename;
+        media.content = await new Response(file).text();
+      break;
+      case 'image/jpeg':
+      case 'image/png':
+      case 'image/gif':
+        id = 'x' + filename;
+        media.href = filename;
+        media.content = await new Response(file).arrayBuffer();
+      break;
+      default:
+        id = filename;
+        media.href = filename;
+        media.content = await new Response(file).arrayBuffer();
+        let extension = file.name.split('.').pop();
+        if(extension == 'ttf'){
+          media.mediatype = 'application/x-font-ttf';
+        }else if(extension == 'otf'){
+          media.mediatype = 'application/vnd.ms-opentype';
+        }else{
+          console.log(file.type);
+        };
+      break;
+    };
+    if(ebook.media.hasOwnProperty(id)){
+      alert('ไฟล์ชื่อ ' + file.name + ' นี้มีแล้วไม่สามารถเพิ่มได้');
+    }else{
+      ebook.media[id] = media;
+      let sectioncount = Object.keys(ebook.section).length;
+      ebook.section[sectioncount] = newsection;
+      if((filecount - 1) == idx){
+        createlist();
+      };
+    };
+  });
+};
+
+newbook.onclick = ()=>{
+  dispatchEvent(new Event('load'));
+};
 
 let submenu = $('#tools .menu')[0];
 let mainmenu = $('#tools')[0];
@@ -378,8 +544,16 @@ let generateUUID = ()=>{
     c =>(c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
   );
 };
+
 let filename = (pathname)=>{
   return pathname.split('\\').pop().split('/').pop();
+};
+
+let onload2promise =(obj)=>{
+  return new Promise((resolve, reject) => {
+    obj.onload = ()=> resolve(obj);
+    obj.onerror = reject;
+  });
 }
 
 </script>
