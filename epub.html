@@ -255,27 +255,33 @@ let createlist = ()=>{
   let sectionlist = '';
   $.each(ebook.section, (idx, node)=>{
     sectionlist += '<tr data-id="' + idx + '"><td>' + (parseInt(idx) + 1) + '</td>';
-    sectionlist += '<td class="sectionhref" data-old="' + ebook.section[idx].id + '" contentEditable="true">' + ebook.section[idx].href + '</td>';
+    sectionlist += '<td class="sectionhref" data-id="' + ebook.section[idx].id + '" data-href="' + ebook.section[idx].href + '" contentEditable="true">' + ebook.section[idx].href + '</td>';
     sectionlist += '<td class="sectiontitle" contentEditable="true">' + ebook.section[idx].title + '</td>';
     let tools = (idx == 0) ? '-' : '<i class="sectionedit file code icon"></i><i class="sectiondelete delete icon"></i>';
     sectionlist += '<td class="sectiontool">' + tools + '</td><tr>';
     });
   $('#sectionlist').html(sectionlist);
   $('#sectionlist .sectionhref').each((idx, node)=>{
-    node.addEventListener('keyup', (e)=>{
+    node.addEventListener('focusout', (e)=>{
       let sectionid = e.target.parentNode.dataset.id;
       let newname = e.target.textContent;
-      let oldid = e.target.dataset.old;
-      let newid = 'x' + newname
+      let oldid = e.target.dataset.id;
+      let newid = 'x' + newname;
+      if(oldid == newid) return;
+      if(ebook.media.hasOwnProperty(newid)){
+        e.target.textContent = e.target.dataset.href;
+        alert('ไฟล์ชื่อ' + newname + 'มีอยู่แล้ว');
+        return;
+      };
       ebook.section[sectionid].href = newname;
       ebook.media[ebook.section[sectionid].id].href = newname;
       ebook.section[sectionid].id = newid;
-      e.target.dataset.old = newid;
+      e.target.dataset.id = newid;
       delete Object.assign(ebook.media, {[newid]: ebook.media[oldid]})[oldid];
       if(sectionid == 0){
         ebook.cover.htmlhref = newname;
         ebook.cover.htmlid = newid;
-      }
+      };
     });
   });
   $('#sectionlist .sectiontitle').each((idx, node)=>{
