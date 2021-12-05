@@ -537,9 +537,16 @@ mediafile.onchange = async(mediafiles)=>{
       case 'text/html':
       case 'application/xhtml+xml':
         addsection = true;
-        mediaid = 'x' + filename;
         media.href = filename;
+        mediaid = 'x' + filename;
         media.content = await new Response(file).text();
+        let newtitle = /<h[1-6].class=".*">(.*)<\/h[1-6]>/i.exec(media.content);
+        newsection = {
+          id: 'x' + filename,
+          href: filename,
+          mediatype: media.mediatype,
+          title: newtitle[1]
+        };
       break;
       case 'text/css':
       case 'application/x-javascript':
