@@ -72,6 +72,7 @@ let timeConverter = (time)=>{
 
 $('#getdata')[0].addEventListener('click', (e)=>{
   let inputText = $('#input')[0].value;
+  inputText = inputText.replace(/http.*=/i, '').trim();
   if(inputText == '') return;
   let chapterlist = '';
   $('#status').html('-');
@@ -88,7 +89,7 @@ $('#getdata')[0].addEventListener('click', (e)=>{
       }else{
         let obj = {};
         $('#name').html(res.ProductName);
-        obj[res.id] = res.ProductName + ((res.ProductTypeSet == 'Cartoon') ? ' (Manga)': '');
+        obj[inputText] = res.ProductName + ((res.ProductTypeSet == 'Cartoon') ? ' (Manga)': '');
         getnovellist(obj);
         Array.prototype.reverse.call(res.EpTopic).forEach((chapter, idx)=>{
           chapterlist += '<tr><td><a href="#' + chapter.EpId+ '" onclick=getchapter("' + chapter.EpId+ '")>' + chapter.EpName + '</a></td><td class="center aligned">' + timeConverter(chapter.createDate) + '</td></tr>';
