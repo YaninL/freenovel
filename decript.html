@@ -54,7 +54,7 @@
 </div>
 
 <script>
-  const decript = {
+  const decrypt = {
     'ก': '[๥]',
     'ข': '[๦]',
     'ค': '[๨]',
@@ -138,7 +138,7 @@
 
   $('#convert')[0].addEventListener('click', (e)=>{
     let inputText = $('#input')[0].value
-    Object.entries(decript).forEach((char)=>{
+    Object.entries(decrypt).forEach((char)=>{
         inputText = inputText.replace(new RegExp(char[1], 'g'), char[0])
     });
     $('#input')[0].value = inputText
@@ -147,7 +147,7 @@
   $('#save')[0].addEventListener('click', (e)=>{
     let inputText = $('#input')[0].value;
     let filename = inputText.split('\n').filter(String)[0].trim();
-    let blob = new Blob([inputText], { type: 'text/plain;charset=utf-8' });
+    let blob = new Blob([inputText], {type: 'text/plain;charset=utf-8'});
     saveAs(blob, filename + '.txt')
   });
   </script>
