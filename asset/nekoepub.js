@@ -514,38 +514,6 @@ mediafile.onchange = async(mediafiles)=>{
   createlist();
 };
 
-restructure.onclick = ()=>{
-  $.each(ebook.media, (idx, content)=>{
-    let mediatype = content.mediatype;
-    switch (mediatype) {
-      case 'application/xhtml+xml':
-      case 'text/html':
-        break;
-      case 'text/css':
-        break;
-      default:
-        break;
-    }
-  });
-
-/*
-text = text.replace(/<wiki>(.+?)<\/wiki>/g, function(match, contents, offset, input_string){
-        return "<a href='wiki/"+contents.replace(/ /g, '_')+"'>"+contents+"</a>";
-    });
-  data = data.replace(/&#13;/ig, '');
-  data = data.replace(/<link.*href="(.*css)".*?>/g, '<link href="..\/Styles\/' + filename($1) + '" type="text\/css"\/>');
-  //data = data.replace(/(<img.*src=".*\/(.*(jpg|jpeg|png|gif)))".*?>/g, 'img:$1$2');
-  console.log(data)
-  let d = $($.parseXML(data));
-  let x = d.find('img') || false;
-  if(x.attr('src')){
-  x.attr('src', '../Images/' + filename(x.attr('src')));
-  console.log($('<div>').append(d).clone()).html();
-  //data = $($.parseXML(data)).text().replace(/\r/g, '').split('\n').map(e=>e.trim()).filter(String);
-*/        
-
-}
-
 let submenu = $('#tools .menu')[0];
 let mainmenu = $('#tools')[0];
 mainmenu.onmouseover = (e)=>{
