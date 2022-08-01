@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta property="description" content=""/>
+<meta name="referrer" content="no-referrer"/>
+<link rel="icon" type="image/png" sizes="16x16" href="tools_asset/cat--v4.png"/>
+<link rel="stylesheet" href="tools_asset/semantic.min.css"/>
+<link rel="stylesheet" href="tools_asset/style.css"/>
+<script src="tools_asset/jquery.min.js"></script>
+<script src="tools_asset/semantic.min.js"></script>
+<script src="tools_asset/FileSaver.min.js"></script>
+<title>Free mynovel</title>
+<style>
+.light-mode-btn{display:none!important}
+select, input{outline:0;width:300px;height:35px}
+#chapterlist {font-size:14pt}
+#chapterlist a:hover{color:#6600cc;}
+#chapterlist a:visited {color: pink;}
+#chapterlist td, #tablelist th {padding: 5px}
+</style>
+</head>
+<body>
+
+<div class="pusher">
+<div class="page-header">
+<div class="ui title container">
+<h1 title="mynovel.co">Free mynovel.co</h1>
+</div>
+
+<div class="ui one column grid page-header-menu">
+<div class="ui attached secondary inverted menu computer only column">
+
+</div>
+
+</div>
+<div class="shadow"></div>
+</div>
+
+<div class="ui container">
+
+<div>PID</div>
+<div><input name="" id="input"> <select id="novellist" onchange="selectnovel(this)"> </select> <button class="ui blue button" id="getdata">Get data</button></div>
+<div id="status">-</div>
+<table class="ui large blue tablet stackable padded table" style="display:none">
+<thead id="tablelist"><tr><th id="name">ตอน</th><th width="200" class="center aligned">เวลา</th></tr></thead>
+<tbody id="chapterlist">
+
+</tbody>
+</table>
+
+<div class="footer">
+<div class="ui divider"></div>
+<p><i>© 2021 Ann and contributors.<span class="info"></span></i></p>
+</div>
+</div>
+</div>
+<div id="temp" style="width:1px;height:1px;overflow:hidden"></div>
+<script>
+
+let timeConverter = (time)=>{
+  var a = new Date(time);
+  var months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  var year = a.getFullYear();
+  var month = months[a.getMonth()];
+  var date = a.getDate();
+  var time = date + ' ' + month + ' ' + year;
+  return time;
+}
+
+$('#getdata')[0].addEventListener('click', (e)=>{
+  let inputText = $('#input')[0].value;
+  inputText = inputText.replace(/http.*=/i, '').trim();
+  if(inputText == '') return;
+  let chapterlist = '';
+  $('#status').html('-');
+  $.ajax({
+    url: 'https://asia-southeast2-mynovel01.cloudfunctions.net/product/' + inputText,
+    type: 'GET',
+    dataType: 'json',
+    headers: {},
+    contentType: 'application/json; charset=utf-8',
+    success: function (res) {
+      if(res.ProductTypeSet == 'Ebook'){
+        $('#status').html('Click to download <a href="' + res.FileUrl+ '" rel="noopener" target="_blank">' + res.ProductName + '</a>');
+        return;
+      }else{
+        let obj = {};
+        $('#name').html(res.ProductName);
+        obj[inputText] = res.ProductName + ((res.ProductTypeSet == 'Cartoon') ? ' (Manga)': '');
+        getnovellist(obj);
+        Array.prototype.reverse.call(res.EpTopic).forEach((chapter, idx)=>{
+          chapterlist += '<tr><td><a href="#' + chapter.EpId+ '" onclick=getchapter("' + chapter.EpId+ '")>' + chapter.EpName + '</a></td><td class="center aligned">' + timeConverter(chapter.createDate) + '</td></tr>';
+        });
+        $('.stackable').css('display', 'table')
+        $('#chapterlist').html(chapterlist);
+      }
+    },
+    error: function (error) {
+    }
+  });
+});
+
+let getchapter = (id)=>{
+  $.ajax({
+    url: 'https://asia-southeast2-mynovel01.cloudfunctions.net/productEP/getProductEpById',
+    method: 'POST',
+    dataType: 'json',
+    data: JSON.stringify({'id': id, 'fontCustom': 'Sarabun', 'appKey': 'xdde8cNN5k7AuVTMgz7b'}),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    contentType: 'application/json; charset=utf-8',
+    success: function (res) {
+      if(res.ProductTypeSet == 'Cartoon'){
+        let html = ' ';
+        res.ImageUrlLists.forEach((img, idx)=>{
+          //$('#status').text('Saveing ' + img);
+          //saveAs(img, res.EpName + '-' + (idx + 1) + '.jpg');
+          html += '<img src="' + img + '" /><br/>';
+          $('html,body').scrollTop(0);
+        });
+        $('#status').html(html);
+      }else{
+        $('#temp').html(res.EpDetail);
+        let content = cleanupcontent(res.EpName +'\n' +$('#temp')[0].innerText);
+        let blob = new Blob([content.replace(/\n/g, '\r\n')], { type: 'text/plain;charset=utf-8' });
+        $('#status').text('Save ' + res.EpName);
+        saveAs(blob, res.EpName + '.txt');
+      }
+    },
+    error: function (error) {
+    }
+  });
+
+}
+
+let getnovellist = (add)=>{
+  add = typeof add !== 'undefined' ? add : false;
+  if (localStorage.getItem('novellist') == null) {
+    localStorage.setItem('novellist', JSON.stringify({}));
+  }
+  let list = JSON.parse(localStorage.getItem('novellist'));
+  if(add && list.hasOwnProperty(Object.keys(add)[0]) != true) {
+     list = Object.assign({}, list, add);
+     localStorage.setItem('novellist', JSON.stringify(list));
+  }
+  let selectlist = '';
+  let sortable = Object.entries(list);
+  sortable.sort((a, b)=>a[1].localeCompare(b[1]));
+  sortable.forEach((e)=>{
+    let selected = (e[0] == Object.keys(add)[0]) ? 'selected=selected' : '';
+    selectlist += '<option value="' + e[0] + '" ' + selected + '>' + e[1] + '</option>'
+  });
+  $('#novellist').html(selectlist);
+}
+
+let selectnovel = (select)=>{
+  var id = select.value;
+  $('#input')[0].value = id;
+  $('#getdata')[0].click();
+}
+
+let cleanupcontent = (input)=>{
+   const encryptChar = ['ก', 'ข', 'ค', 'ช', 'ซ','ด', 'ต',
+                             'น', 'บ', 'ม', 'ย', 'ร', 'ส', 'ห', 'อ',
+                             'ั', 'ิ', 'ี', 'ึ' , 'ื', 'ุ', 'ู', '็', '่', '้', '๊', '๋', '์']
+    for (const idx in encryptChar) {
+      const enChar = encryptChar[idx].split('')
+      const thChar = enChar.splice(0, 1)
+      const pattencrypt = new RegExp(enChar.join('|'), 'g')
+      input = input.replace(pattencrypt, thChar)
+    }
+    let input_line = input.replace('\r', '\n').split('\n').filter(String);
+    let output = [];
+    let cleanupregex = {'[\\u200b|\\u200c|\\u200d|\\uFEFF|\\u2028]': '', '\\u00a0': ' '};
+    input_line.forEach((in_line) => {
+      let textline = in_line.trim();
+      Object.entries(cleanupregex).forEach((line) => {
+        textline = textline.replace(new RegExp(line[0], 'g'), line[1]);
+      });
+      output.push(textline.trim());
+    });
+    output = output.filter(String);
+    if (output[0] == output[1]) output.splice(1, 1);
+    return output.join('\n\n');
+}
+
+getnovellist();
+
+</script>
+</body>
+</html>
