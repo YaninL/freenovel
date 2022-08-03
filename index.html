@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta property="description" content=""/>
 <meta name="referrer" content="no-referrer"/>
-<link rel="icon" type="image/png" sizes="16x16" href="asset/cat--v4.png"/>
+<link rel="icon" type="image/png" sizes="16x16" href="s_asset/cat--v4.png"/>
 <link rel="stylesheet" href="asset/semantic.min.css"/>
 <link rel="stylesheet" href="asset/style.css"/>
 <script src="asset/jquery.min.js"></script>
@@ -45,7 +45,7 @@ select, input{outline:0;width:300px;height:35px}
 <div><input name="" id="input"> <select id="novellist" onchange="selectnovel(this)"> </select> <button class="ui blue button" id="getdata">Get data</button></div>
 <div id="status">-</div>
 <table class="ui large blue tablet stackable padded table" style="display:none">
-<thead id="tablelist"><tr><th id="name">ตอน</th><th width="200" class="center aligned">เวลา</th></tr></thead>
+<thead id="tablelist"><tr><th width="70" class="center aligned">#</th><th id="name">ตอน</th><th width="200" class="center aligned">เวลา</th></tr></thead>
 <tbody id="chapterlist">
 
 </tbody>
@@ -93,7 +93,7 @@ $('#getdata')[0].addEventListener('click', (e)=>{
         getnovellist(obj);
         const length = Object.keys(res.EpTopic).length
         Array.prototype.reverse.call(res.EpTopic).forEach((chapter, idx)=>{
-          chapterlist += '<tr><td><a href="#' + chapter.EpId+ '" onclick="getchapter(\'' + chapter.EpId + '\', \'' + (length - idx) + '\')">' + chapter.EpName + '</a></td><td class="center aligned">' + timeConverter(chapter.createDate) + '</td></tr>';
+          chapterlist += '<tr><td class="center aligned">' + (length - idx) + '</td><td><a href="#' + chapter.EpId+ '" onclick="getchapter(\'' + chapter.EpId + '\', \'' + (length - idx) + '\')">' + chapter.EpName + '</a></td><td class="center aligned">' + timeConverter(chapter.createDate) + '</td></tr>';
         });
         $('.stackable').css('display', 'table')
         $('#chapterlist').html(chapterlist);
