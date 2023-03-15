@@ -176,9 +176,10 @@ let getchapter = (id, idx)=>{
         let type = document.getElementById('type').checked; 
         if(type){
           let content = cleanupcontent(res.EpName + '\n\n' + document.getElementById('temp').innerText);
-          console.log(content)
           document.getElementById('overlayz').style.display = 'block'
-          document.querySelector('.containerz').innerHTML = content.replace(/\n/g, '<br/>')
+          let container = document.querySelector('.containerz');
+          container.innerHTML = content.replace(/\n/g, '<br/>');
+          container.scrollTop = 0
         }else{
           let content = cleanupcontent('ตอนที่ ' + idx + ' ' + res.EpName +'\n' +$('#temp')[0].innerText);
           let blob = new Blob([content.replace(/\n/g, '\r\n')], { type: 'text/plain;charset=utf-8' });
