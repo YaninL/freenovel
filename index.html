@@ -184,7 +184,7 @@ let getchapter = (id, idx)=>{
           let content = cleanupcontent(res.EpName +'\n' +$('#temp')[0].innerText);
           let blob = new Blob([content.replace(/\n/g, '\r\n')], { type: 'text/plain;charset=utf-8' });
           $('#status').text('Save ' + res.EpName);
-          saveAs(blob, idx + ' - ' + res.EpName + '.txt');
+          saveAs(blob, res.EpName.trim() + '.txt');
         }
       }
     },
