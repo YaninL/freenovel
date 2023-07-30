@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta property="description" content="" />
+<link rel="stylesheet" href="asset/semantic.min.css" />
+<link rel="stylesheet" href="asset/style.css" />
+<script src="asset/jquery.min.js"></script>
+<script src="asset/FileSaver.min.js"></script>
+<script src="asset/worker.js"></script>
+<title>BOOK☆WALKER : HAR Content Decrypt</title>
+</head>
+<body>
+
+<div class="pusher">
+<div class="page-header">
+<div class="ui title container">
+<h1>BOOK☆WALKER : HAR Content Decrypt</h1>
+</div>
+
+<div class="ui one column grid page-header-menu">
+<div class="ui attached secondary inverted menu computer only column">
+  <div class="ui container">
+    <a class="item" id="openfile"><i class="book icon"></i>Open Har with Content file</a>
+  </div>
+</div>
+
+</div>
+<div class="shadow"></div>
+</div>
+
+<div class="ui container">
+<div id="output">
+  <h3>---</h3>
+</div>
+
+<div class="footer">
+<div class="ui divider"></div>
+<p><i>© 2023 Ann and contributors.<span class="info"></span></i></p>
+</div>
+</div>
+</div>
+<input type="file" id="jsonfile" style="width: 1px;height: 1px;overflow: hidden;">
+<script>
+  const getFilename = (pathname) => pathname.split('\\').pop().split('/').pop();
+
+  const sortObject = o => Object.keys(o).sort().reduce((r, k) => (r[k] = o[k], r), {});
+
+  const b64toBlob = (b64Data, contentType='', sliceSize=512) => {
+    const byteCharacters = atob(b64Data);
+    const byteArrays = [];
+    for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+      const slice = byteCharacters.slice(offset, offset + sliceSize);
+      const byteNumbers = new Array(slice.length);
+      for (let i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      byteArrays.push(byteArray);
+    }
+    const blob = new Blob(byteArrays, {type: contentType});
+    return blob;
+  }
+
+  openfile.onclick = (e)=>{
+    $('#jsonfile')[0].click()
+  }
+  
+  jsonfile.onchange = async(file)=>{
+    $('#output').html('Opening.....');
+    const filecontent = file.target.files[0]
+    const reader = await new Response(filecontent).json()
+    let allImage = {};
+    let zip = [];
+    for(let i=0; i< reader.log.entries.length; i++){
+      if(reader.log.entries[i].response.content.mimeType != 'image/jpg') continue;
+        const fileName = getFilename(reader.log.entries[i].request.url);
+        allImage[fileName] = reader.log.entries[i].response.content.text;
+      }
+    allImage = sortObject(allImage);
+    $('#output').html(`<h3>Total image : ${Object.keys(allImage).length} files</h3>`);
+    for(let key in allImage){
+      const blob = b64toBlob(allImage[key], 'image/jpeg');
+      zip.push({name: key, lastModified: new Date(), input: blob})
+      $('#output').append(`
+        <div class="ui small image" style="width:180px;margin-top:30px;text-align: center;">
+          <span><img src="${URL.createObjectURL(blob)}"/></span>
+          <span>${key}</span>
+        </div>`);
+    }
+    const zipBlob = await downloadZip(zip).blob();
+    saveAs(zipBlob, 'saveImage.zip');
+  }
+  </script>
+</body>
+</html>
