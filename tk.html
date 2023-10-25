@@ -159,7 +159,10 @@ const addFile = async(htmlfiles)=>{
   Object.keys(htmlfiles.files).map(async(key) => {
     const file = htmlfiles.files[key]
     setstatus('กำลังเพิ่มไฟล์ ' + file.name, false);
-    const htmlfile = fileList.find(a => a.includes(Path.filename(file.name) + '.'))
+    let htmlfile = fileList.find(a => a.includes(file.name)) || false
+    if(!htmlfile) {
+      htmlfile = fileList.find(a => a.includes(file.name.replace('xhtml', 'html')))
+    }
     const filesCheck = document.querySelectorAll('.files')
     if(htmlfile){
       filesCheck.forEach(ck=>{
