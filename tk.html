@@ -135,12 +135,15 @@ genFileList.onclick = async()=>{
   fileList.map(file => {
     urlList += 'http://127.0.0.1:' + port + '/' + bookId + '/' + file + '\n'
   })
-  console.log(urlList)
+  const blob = new Blob([urlList], {type: 'text/plain;charset=utf-8'})
+  saveAs(blob, `list-${bookId}.txt`)
+  setstatus('สร้างรายการแล้ว!');
+  /*
   navigator.clipboard.writeText(urlList).then(function() {
     setstatus('คัดลอกรายการไปที่คลิบบอร์ดแล้ว!');
   }, function(err) {
     setstatus('คัดลอกรายการไม่สำเร็จ!');
-  });
+  });*/
 }
 
 addHtmlFile.onclick = (e) => {
@@ -164,18 +167,17 @@ const addFile = async(htmlfiles)=>{
       })
       importZip.remove(htmlfile)
       let content = await new Response(file).text()
-      content = content
-        .replace(/(\r?\n|^)[0-9a-f]{1,10}\r?\n/g, '')
-        .replace(/style=" --USER.*;"\s/, '')
-        .replace(/<(script|style).*(script|style)>/g, '')
-        .replace(/<link.*href="\/styles\/.*css"\/>/g, '')
-        .replace(/<link.*href="\/CustomCss\/.*css.*\/>/g, '')
-        .replace(/width.*scalable=0/, '')
-        .replace(/<style.*\n?.*style>/g, '')
-        .split('\n')
-        .map(e => e.trim())
-        .filter(String)
-        .join('\n')
+          .replace(/style=" --USER.*;"\s/, '')
+          .replace(/<(script|style).*(script|style)>/g, '')
+          .replace(/<link.*href="\/styles\/.*css"\/>/g, '')
+          .replace(/<link.*href="\/CustomCss\/.*css.*\/>/g, '')
+          .replace(/width.*scalable=0/, '')
+          .replace(/<style.*\n?.*style>/g, '')
+          .replace(/(&#8203;|&#13;)/g, '')
+          .split('\n')
+          .map(e => e.trim())
+          .filter(String)
+          .join('\n')
       importZip.file(htmlfile, content)
     }
   })
@@ -242,6 +244,8 @@ const setstatus = (str, hide = true) => {
     }, 1000)
   }
 }
+
+
 
 </script>
 </body>
