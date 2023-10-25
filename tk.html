@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta property="description" content="" />
+<link rel="stylesheet" href="asset/semantic.min.css" />
+<link rel="stylesheet" href="asset/style.css" />
+<script src="asset/FileSaver.min.js"></script>
+<script src="asset/jszip.min.js"></script>
+<title>TK Gen</title>
+</head>
+<body>
+
+<div class="pusher">
+<div class="page-header">
+<div class="ui title container">
+<h1> </h1>
+</div>
+
+<div class="ui one column grid page-header-menu">
+<div class="ui attached secondary inverted menu computer only column">
+  <div class="ui container">
+    <div class="item active" id="status" style="display: none;"></div>
+    <div class="menu right">
+      <a class="item" id="openfile"><i class="book icon"></i>เปิดหนังสือ</a>
+      <a class="item" id="genFileList"><i class="file code outline icon"></i>สร้างรายการ</a>
+      <a class="item" id="addHtmlFile"><i class="plus icon"></i>เพิ่มไฟล์ html</a>
+      <a class="item" id="saveFile"><i class="save icon"></i>บันทึกหนังสือ</a>
+    </div>
+  </div>
+</div>
+
+</div>
+<div class="shadow"></div>
+</div>
+
+<div class="ui container">
+  <div class="ui relaxed divided items">
+    <div class="item">
+      <div class="content bookinfo">
+        <div class="header">📝 ข้อมูลหนังสือ</div>
+        <table class="ui striped table" style="border: 0px;">
+          <tr>
+            <td class="two wide column"><b>พอร์ตเชื่อมต่อ</b></td>
+            <td id="port" contenteditable="true"></td>
+          </tr>
+          <tr>
+            <td class="two wide column"><b>ไอดีหนังสือ</b></td>
+            <td id="filename" contenteditable="true"></td>
+          </tr>
+          <tr>
+            <td><b>ชื่อเรื่อง</b></td>
+            <td id="title" contenteditable="true"></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <table class="ui striped blue table">
+      <thead>
+        <tr>
+          <th class="one wide column">ลำดับ</th>
+          <th class="four wide column">ชื่อไฟล์</th>
+          <th class="two wide column right aligned">📦</th>
+        </tr>
+      </thead>
+      <tbody id="sectionlist"></tbody>
+    </table>
+  </div>
+<div class="footer">
+<div class="ui divider"></div>
+<p><i>© 2023 Ann and contributors.<span class="info"></span></i></p>
+</div>
+</div>
+</div>
+<input type="file" id="zipfile" accept=".zip,.epub" style="width: 1px;height: 1px;overflow: hidden;">
+<input type="file" id="addfile" accept=".html,.xhtml" multiple="" style="width: 1px;height: 1px;overflow: hidden;">
+<script>
+
+let importZip = false
+let fileList = false
+let ebookName = ''
+let bookId = ''
+
+openfile.onclick = (e)=>{
+  document.getElementById('zipfile').click()
+}
+
+zipfile.onchange = (file) => {
+  importZip = new JSZip()
+  fileList = []
+  const ebookfile = file.target.files[0]
+  bookId = Path.filename(ebookfile.name)
+  document.getElementById('filename').innerText = bookId
+  setstatus('กำลังอ่านไฟล์หนังสือ...', false)
+  importZip.loadAsync(ebookfile).then(async(zip) => {
+    const sectionList = document.querySelector('#sectionlist')
+    const ebookNameNode = document.querySelector('#title')
+    sectionList.innerHTML = ''
+    let row = 1
+    Object.keys(zip.files).forEach(async(file)=>{
+      if(Path.extname(file) == ".opf"){
+        const opfxml = await zip.files[file].async('text')
+        const title = /<dc.title>(.*)<\/dc.title>/i.exec(opfxml)
+        if (title != null) {
+          ebookName = title[1]
+          ebookNameNode.innerText = title[1]
+        }
+      }
+      if(Path.extname(file) == ".html" || Path.extname(file) == ".xhtml"){
+        fileList.push(file)
+        sectionList.insertAdjacentHTML('beforeend', `
+          <tr><td>${row}</td>
+          <td>${file}</td>
+          <td class="right aligned files" data-file="${file}">❌</td><tr>`)
+        row++
+      }
+    })
+  })
+  setstatus('อ่านไฟล์หนังสือแล้ว...')
+}
+  
+genFileList.onclick = async()=>{
+  if(!fileList){
+    setstatus('โปรดเปิดไฟล์หนังสือก่อน!');
+    return
+  }
+  const port = document.getElementById('port').innerText
+  if(port == ''){
+    setstatus('โปรดระบุพอร์ตเชื่อมต่อ!');
+    return
+  }
+  let urlList = ''
+  fileList.map(file => {
+    urlList += 'http://127.0.0.1:' + port + '/' + bookId + '/' + file + '\n'
+  })
+  console.log(urlList)
+  navigator.clipboard.writeText(urlList).then(function() {
+    setstatus('คัดลอกรายการไปที่คลิบบอร์ดแล้ว!');
+  }, function(err) {
+    setstatus('คัดลอกรายการไม่สำเร็จ!');
+  });
+}
+
+addHtmlFile.onclick = (e) => {
+  if(!importZip){
+    setstatus('โปรดเปิดไฟล์หนังสือก่อน!');
+    return
+  }
+  document.querySelector('#addfile').click()
+  addfile.onchange = (mediafiles) => addFile(mediafiles.target)
+}
+
+const addFile = async(htmlfiles)=>{
+  Object.keys(htmlfiles.files).map(async(key) => {
+    const file = htmlfiles.files[key]
+    setstatus('กำลังเพิ่มไฟล์ ' + file.name, false);
+    const htmlfile = fileList.find(a =>a.includes(file.name))
+    const filesCheck = document.querySelectorAll('.files')
+    if(htmlfile){
+      filesCheck.forEach(ck=>{
+        if(ck.dataset.file == htmlfile) ck.innerText = '✔️'
+      })
+      importZip.remove(htmlfile)
+      let content = await new Response(file).text()
+      content = content
+        .replace(/(\r?\n|^)[0-9a-f]{1,10}\r?\n/g, '')
+        .replace(/style=" --USER.*;"\s/, '')
+        .replace(/<(script|style).*(script|style)>/g, '')
+        .replace(/<link.*href="\/styles\/.*css"\/>/g, '')
+        .replace(/<link.*href="\/CustomCss\/.*css.*\/>/g, '')
+        .replace(/width.*scalable=0/, '')
+        .replace(/<style.*\n?.*style>/g, '')
+        .split('\n')
+        .map(e => e.trim())
+        .filter(String)
+        .join('\n')
+      importZip.file(htmlfile, content)
+    }
+  })
+  setstatus('เพิ่มไฟล์แล้ว');
+}
+
+saveFile.onclick = async (e) => {
+  if(!importZip){
+    setstatus('โปรดเปิดไฟล์หนังสือก่อน!');
+    return
+  }
+  importZip.remove('META-INF/encryption.xml')
+  importZip.remove('META-INF/license.lcpl')
+  importZip.remove('META-INF/calibre_bookmarks.txt')
+  importZip.remove('iTunesMetadata.plist')
+  importZip.generateAsync({
+    type: 'blob',
+    mimeType: 'application/epub+zip',
+    compression: 'DEFLATE',
+    compressionOptions: {level: 9}
+  }, (progress) => {
+    const file = progress.currentFile ? Path.basename(progress.currentFile) : ''
+    setstatus('กำลังสร้างไฟล์...' + progress.percent.toFixed(2) + '% (ไฟล์ ' + file + ')', false)
+  }).then((blob) => {
+    setstatus('สร้างไฟล์หนังสือแล้ว...')
+    saveAs(blob, ebookName + '.epub')
+  })
+}
+
+const Path = {
+  dirname (pathname) {
+    const part = pathname.split('/').slice(0, -1).join('/')
+    return (part.length) ? part + '/' : part
+  },
+  basename (pathname) {
+    return pathname.split('\\').pop().split('/').pop()
+  },
+  filename (pathname) {
+    return this.basename(pathname).split('.').slice(0, -1).join('.')
+  },
+  extname (pathname) {
+    return '.' + pathname.split('.').pop()
+  },
+  join (...args) {
+    return args.map((part, i) => {
+      if (typeof part === 'undefined' || part == false) return ''
+      if (i === 0) {
+        return part.trim().replace(/[\/]*$/g, '')
+      } else {
+        return part.trim().replace(/(^[\/]*|[\/]*$)/g, '')
+      }
+    }).filter(x => x.length).join('/')
+  }
+}
+
+const setstatus = (str, hide = true) => {
+  str = '📢 <span>' + str + '</span>'
+  const status = document.querySelector('#status')
+  status.style.display = 'block'
+  status.innerHTML = str
+  if (hide) {
+    setTimeout(() => {
+      status.style.display = 'none'
+    }, 1000)
+  }
+}
+
+</script>
+</body>
+</html>
