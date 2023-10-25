@@ -167,6 +167,7 @@ const addFile = async(htmlfiles)=>{
       })
       importZip.remove(htmlfile)
       let content = await new Response(file).text()
+      content = content
           .replace(/style=" --USER.*;"\s/, '')
           .replace(/<(script|style).*(script|style)>/g, '')
           .replace(/<link.*href="\/styles\/.*css"\/>/g, '')
