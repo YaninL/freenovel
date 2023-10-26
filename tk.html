@@ -16,7 +16,7 @@
 <div class="pusher">
 <div class="page-header">
 <div class="ui title container">
-<h1>tk gen</h1>
+<h1> </h1>
 </div>
 
 <div class="ui one column grid page-header-menu">
@@ -133,7 +133,7 @@ genFileList.onclick = async()=>{
   }
   let urlList = ''
   fileList.map(file => {
-    urlList += 'http://127.0.0.1:' + port + '/' + bookId + '/' + file + '\n'
+    urlList += `http://127.0.0.1:${port}/${bookId}/${file}\n`
   })
   const blob = new Blob([urlList], {type: 'text/plain;charset=utf-8'})
   saveAs(blob, `list-${bookId}.txt`)
@@ -159,10 +159,7 @@ const addFile = async(htmlfiles)=>{
   Object.keys(htmlfiles.files).map(async(key) => {
     const file = htmlfiles.files[key]
     setstatus('กำลังเพิ่มไฟล์ ' + file.name, false);
-    let htmlfile = fileList.find(a => a.includes('/' + file.name)) || false
-    if(!htmlfile) {
-      htmlfile = fileList.find(a => a.includes('/' + file.name.replace('xhtml', 'html')))
-    }
+    let htmlfile = fileList.find(a => Path.filename(a) == Path.filename(file.name))
     const filesCheck = document.querySelectorAll('.files')
     if(htmlfile){
       filesCheck.forEach(ck=>{
@@ -248,8 +245,6 @@ const setstatus = (str, hide = true) => {
     }, 1000)
   }
 }
-
-
 
 </script>
 </body>
