@@ -48,7 +48,7 @@
           </tr>
           <tr>
             <td class="two wide column"><b>ไอดีหนังสือ</b></td>
-            <td id="filename" contenteditable="true"></td>
+            <td id="filename"></td>
           </tr>
           <tr>
             <td><b>ชื่อเรื่อง</b></td>
@@ -80,8 +80,13 @@
 
 let importZip = false
 let fileList = false
-let ebookName = ''
 let bookId = ''
+let opfxml = ''
+
+document.querySelector('#title').addEventListener('focusout', event => {
+  const name = toHtmlEntities(event.target.innerText).trim()
+  opfxml = opfxml.replace(/<dc.title>(.*)<\/dc.title>/i, `<dc:title>${name}</dc:title>`)
+})
 
 openfile.onclick = (e)=>{
   document.getElementById('zipfile').click()
@@ -101,12 +106,13 @@ zipfile.onchange = (file) => {
     let row = 1
     Object.keys(zip.files).forEach(async(file)=>{
       if(Path.extname(file) == ".opf"){
-        const opfxml = await zip.files[file].async('text')
+        opffile = file
+        opfxml = await zip.files[file].async('text')
         const title = /<dc.title>(.*)<\/dc.title>/i.exec(opfxml)
         if (title != null) {
-          ebookName = title[1]
           ebookNameNode.innerText = title[1]
         }
+        opfxml = opfxml.replace(' linear="no"', '')
       }
       if(Path.extname(file) == ".html" || Path.extname(file) == ".xhtml"){
         fileList.push(file)
@@ -190,10 +196,12 @@ saveFile.onclick = async (e) => {
     setstatus('โปรดเปิดไฟล์หนังสือก่อน!');
     return
   }
+  importZip.remove(opffile)
   importZip.remove('META-INF/encryption.xml')
   importZip.remove('META-INF/license.lcpl')
   importZip.remove('META-INF/calibre_bookmarks.txt')
   importZip.remove('iTunesMetadata.plist')
+  importZip.file(opffile, opfxml)
   importZip.generateAsync({
     type: 'blob',
     mimeType: 'application/epub+zip',
@@ -204,6 +212,7 @@ saveFile.onclick = async (e) => {
     setstatus('กำลังสร้างไฟล์...' + progress.percent.toFixed(2) + '% (ไฟล์ ' + file + ')', false)
   }).then((blob) => {
     setstatus('สร้างไฟล์หนังสือแล้ว...')
+    const ebookName = document.querySelector('#title').innerText.trim()
     saveAs(blob, ebookName + '.epub')
   })
 }
@@ -233,6 +242,14 @@ const Path = {
     }).filter(x => x.length).join('/')
   }
 }
+
+toHtmlEntities = str => str.toString()
+  .replace(/[&<>]/g,match => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;'
+  }[match])
+)
 
 const setstatus = (str, hide = true) => {
   str = '📢 <span>' + str + '</span>'
