@@ -48,16 +48,18 @@
           </tr>
           <tr>
             <td class="two wide column"><b>ไอดีหนังสือ</b></td>
-            <td id="filename"></td>
+            <td id="filename">-</td>
           </tr>
           <tr>
             <td><b>ชื่อเรื่อง</b></td>
-            <td id="title" contenteditable="true"></td>
+            <td id="title" contenteditable="true">-</td>
           </tr>
         </table>
       </div>
     </div>
+    <!--div class="ui info message"><i class="icon lightbulb outline"></i></div-->
     <table class="ui striped blue table">
+      <caption id="info" style="text-align:right">Total: 0/0</caption>
       <thead>
         <tr>
           <th class="one wide column">ลำดับ</th>
@@ -119,10 +121,12 @@ zipfile.onchange = (file) => {
         sectionList.insertAdjacentHTML('beforeend', `
           <tr><td>${row}</td>
           <td>${file}</td>
-          <td class="right aligned files" data-file="${file}">❌</td><tr>`)
+          <td class="right aligned files" data-added="false" data-file="${file}">❌</td><tr>`)
         row++
       }
     })
+    const info = document.getElementById('info')
+    info.innerText = `Total: 0/${fileList.length}`
   })
   setstatus('อ่านไฟล์หนังสือแล้ว...')
 }
@@ -169,7 +173,10 @@ const addFile = async(htmlfiles)=>{
     const filesCheck = document.querySelectorAll('.files')
     if(htmlfile){
       filesCheck.forEach(ck=>{
-        if(ck.dataset.file == htmlfile) ck.innerText = '✔️'
+        if(ck.dataset.file == htmlfile){
+          ck.innerText = '✔️'
+          ck.dataset.added = 'true'
+        }
       })
       importZip.remove(htmlfile)
       let content = await new Response(file).text()
@@ -189,6 +196,9 @@ const addFile = async(htmlfiles)=>{
     }
   })
   setstatus('เพิ่มไฟล์แล้ว');
+  const addAll = document.querySelectorAll('[data-added="true"]').length
+  const info = document.getElementById('info')
+  info.innerText = `Total: ${addAll}/${fileList.length}`
 }
 
 saveFile.onclick = async (e) => {
@@ -196,11 +206,17 @@ saveFile.onclick = async (e) => {
     setstatus('โปรดเปิดไฟล์หนังสือก่อน!');
     return
   }
-  importZip.remove(opffile)
+  const addAll = document.querySelectorAll('[data-added="false"]').length
+  if(addAll > 0){
+    if (!confirm('ไฟล์ยังเพิ่มไม่ครบ ยืนยันที่จะบันทึกต่อไป?')) {
+      return
+    }
+  }
   importZip.remove('META-INF/encryption.xml')
   importZip.remove('META-INF/license.lcpl')
   importZip.remove('META-INF/calibre_bookmarks.txt')
   importZip.remove('iTunesMetadata.plist')
+  importZip.remove(opffile)
   importZip.file(opffile, opfxml)
   importZip.generateAsync({
     type: 'blob',
