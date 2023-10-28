@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="asset/style.css" />
 <script src="asset/FileSaver.min.js"></script>
 <script src="asset/jszip.min.js"></script>
-<title>TK Gen</title>
+<title>TK Epub Packer</title>
 </head>
 <body>
 
@@ -44,7 +44,7 @@
         <table class="ui striped table" style="border: 0px;">
           <tr>
             <td class="two wide column"><b>พอร์ตเชื่อมต่อ</b></td>
-            <td id="port" contenteditable="true"></td>
+            <td id="port" contenteditable="true">-</td>
           </tr>
           <tr>
             <td class="two wide column"><b>ไอดีหนังสือ</b></td>
@@ -59,7 +59,7 @@
     </div>
     <!--div class="ui info message"><i class="icon lightbulb outline"></i></div-->
     <table class="ui striped blue table">
-      <caption id="info" style="text-align:right">Total: 0/0</caption>
+      <caption style="text-align:right">🌱 Total : <span id="info">0/0</span> </caption>
       <thead>
         <tr>
           <th class="one wide column">ลำดับ</th>
@@ -72,7 +72,7 @@
   </div>
 <div class="footer">
 <div class="ui divider"></div>
-<p><i>© 2023 Ann and contributors.<span class="info"></span></i></p>
+<p><i>🎐© 2023 Ann and contributors.<span class="info"></span></i></p>
 </div>
 </div>
 </div>
@@ -121,12 +121,14 @@ zipfile.onchange = (file) => {
         sectionList.insertAdjacentHTML('beforeend', `
           <tr><td>${row}</td>
           <td>${file}</td>
-          <td class="right aligned files" data-added="false" data-file="${file}">❌</td><tr>`)
+          <td class="right aligned files"
+            data-added="false"
+            data-file="${file}">❌</td><tr>`)
         row++
       }
     })
     const info = document.getElementById('info')
-    info.innerText = `Total: 0/${fileList.length}`
+    info.innerText = `0/${fileList.length}`
   })
   setstatus('อ่านไฟล์หนังสือแล้ว...')
 }
@@ -136,8 +138,8 @@ genFileList.onclick = async()=>{
     setstatus('โปรดเปิดไฟล์หนังสือก่อน!');
     return
   }
-  const port = document.getElementById('port').innerText
-  if(port == ''){
+  const port = document.getElementById('port').innerText.trim()
+  if(port == '' || port == '-'){
     setstatus('โปรดระบุพอร์ตเชื่อมต่อ!');
     return
   }
@@ -166,16 +168,16 @@ addHtmlFile.onclick = (e) => {
 }
 
 const addFile = async(htmlfiles)=>{
+  const checkList = document.querySelectorAll('.files')
   Object.keys(htmlfiles.files).map(async(key) => {
     const file = htmlfiles.files[key]
     setstatus('กำลังเพิ่มไฟล์ ' + file.name, false);
-    let htmlfile = fileList.find(a => Path.filename(a) == Path.filename(file.name))
-    const filesCheck = document.querySelectorAll('.files')
+    let htmlfile = fileList.find(e => Path.filename(e) == Path.filename(file.name))
     if(htmlfile){
-      filesCheck.forEach(ck=>{
-        if(ck.dataset.file == htmlfile){
-          ck.innerText = '✔️'
-          ck.dataset.added = 'true'
+      checkList.forEach(ckeck=>{
+        if(ckeck.dataset.file == htmlfile){
+          ckeck.innerText = '✔️'
+          ckeck.dataset.added = 'true'
         }
       })
       importZip.remove(htmlfile)
@@ -198,7 +200,7 @@ const addFile = async(htmlfiles)=>{
   setstatus('เพิ่มไฟล์แล้ว');
   const addAll = document.querySelectorAll('[data-added="true"]').length
   const info = document.getElementById('info')
-  info.innerText = `Total: ${addAll}/${fileList.length}`
+  info.innerText = `${addAll}/${fileList.length}`
 }
 
 saveFile.onclick = async (e) => {
@@ -259,7 +261,7 @@ const Path = {
   }
 }
 
-toHtmlEntities = str => str.toString()
+const toHtmlEntities = str => str.toString()
   .replace(/[&<>]/g,match => ({
     '&': '&amp;',
     '<': '&lt;',
