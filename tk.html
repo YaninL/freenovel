@@ -90,6 +90,10 @@ document.querySelector('#title').addEventListener('focusout', event => {
   opfxml = opfxml.replace(/<dc.title>(.*)<\/dc.title>/i, `<dc:title>${name}</dc:title>`)
 })
 
+document.querySelector('#port').addEventListener('focusout', event => {
+  event.target.innerText = event.target.innerText.replace(/[^\d]+/g, '')
+})
+
 openfile.onclick = (e)=>{
   document.getElementById('zipfile').click()
 }
@@ -115,6 +119,17 @@ zipfile.onchange = (file) => {
           ebookNameNode.innerText = title[1]
         }
         opfxml = opfxml.replace(' linear="no"', '')
+      }
+      if(Path.extname(file) == ".ncx"){
+        ncxxml = await zip.files[file].async('text')
+        ncxxml = ncxxml
+            .replace(/(&#8203;|&#13;)/g, '')
+            .split('\n')
+            .map(e => e.trim())
+            .filter(String)
+            .join('\n')
+        importZip.remove(file)
+        importZip.file(file, ncxxml)
       }
       if(Path.extname(file) == ".html" || Path.extname(file) == ".xhtml"){
         fileList.push(file)
