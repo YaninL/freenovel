@@ -122,14 +122,9 @@ zipfile.onchange = (file) => {
       }
       if(Path.extname(file) == ".ncx"){
         ncxxml = await zip.files[file].async('text')
-        ncxxml = ncxxml
-            .replace(/(&#8203;|&#13;)/g, '')
-            .split('\n')
-            .map(e => e.trim())
-            .filter(String)
-            .join('\n')
+        ncxxml = ncxxml.replace(/(&#8203;|&#13;)/g, '')
         importZip.remove(file)
-        importZip.file(file, ncxxml)
+        importZip.file(file, removeSpace(ncxxml))
       }
       if(Path.extname(file) == ".html" || Path.extname(file) == ".xhtml"){
         fileList.push(file)
@@ -205,11 +200,7 @@ const addFile = async(htmlfiles)=>{
         .replace(/width.*scalable=0/, '')
         .replace(/<style.*\n?.*style>/g, '')
         .replace(/(&#8203;|&#13;)/g, '')
-        .split('\n')
-        .map(e => e.trim())
-        .filter(String)
-        .join('\n')
-      importZip.file(htmlfile, content)
+      importZip.file(htmlfile, removeSpace(content))
     }
   })
   setstatus('เพิ่มไฟล์แล้ว');
@@ -234,7 +225,7 @@ saveFile.onclick = async (e) => {
   importZip.remove('META-INF/calibre_bookmarks.txt')
   importZip.remove('iTunesMetadata.plist')
   importZip.remove(opffile)
-  importZip.file(opffile, opfxml)
+  importZip.file(opffile, removeSpace(opfxml))
   importZip.generateAsync({
     type: 'blob',
     mimeType: 'application/epub+zip',
@@ -275,6 +266,8 @@ const Path = {
     }).filter(x => x.length).join('/')
   }
 }
+
+const removeSpace = str => str.split('\n').map(e => e.trim()).filter(String).join('\n')
 
 const toHtmlEntities = str => str.toString()
   .replace(/[&<>]/g,match => ({
