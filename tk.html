@@ -20,7 +20,7 @@
 </div>
 
 <div class="ui one column grid page-header-menu">
-<div class="ui attached secondary inverted menu column page-header-toolbar">
+<div class="ui attached secondary inverted menu column">
   <div class="ui container">
     <div class="item active" id="status" style="display: none;"></div>
     <div class="menu right">
@@ -48,7 +48,7 @@
           </tr>
           <tr>
             <td class="two wide column"><b>ไอดีหนังสือ</b></td>
-            <td id="filename" contenteditable="true">-</td>
+            <td id="filename">-</td>
           </tr>
           <tr>
             <td><b>ชื่อเรื่อง</b></td>
@@ -99,22 +99,23 @@ openfile.onclick = (e)=>{
 }
 
 zipfile.onchange = (file) => {
+  const sectionList = document.getElementById('sectionlist')
+  const ebookNameNode = document.getElementById('title')
+  const bookIdNode = document.getElementById('filename')
+  ebookNameNode.innerText = '-'
+  bookIdNode.innerText = '-'
+  sectionList.innerHTML = ''
   importZip = new JSZip()
   fileList = []
   const ebookfile = file.target.files[0]
-  const fileName = Path.filename(ebookfile.name)
-  const getuuid = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i.exec(fileName)
-  if(getuuid == null){
+  bookId = Path.filename(ebookfile.name).replace(/\[\d\]/, '')
+  if(bookId.length != 36){
     setstatus('ไม่พบไอดีหนังสือ โปรดอย่าเปลี่ยนชื่อไฟล์!');
     return
   }
-  bookId = getuuid[1]
-  document.getElementById('filename').innerText = bookId
+  bookIdNode.innerText = bookId
   setstatus('กำลังอ่านไฟล์หนังสือ...', false)
   importZip.loadAsync(ebookfile).then(async(zip) => {
-    const sectionList = document.querySelector('#sectionlist')
-    const ebookNameNode = document.querySelector('#title')
-    sectionList.innerHTML = ''
     let row = 1
     Object.keys(zip.files).forEach(async(file)=>{
       if(Path.extname(file) == ".opf"){
