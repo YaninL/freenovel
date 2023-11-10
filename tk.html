@@ -82,7 +82,6 @@
 
 let importZip = false
 let fileList = false
-let bookId = ''
 let opfxml = ''
 
 document.querySelector('#title').addEventListener('focusout', event => {
@@ -100,20 +99,20 @@ openfile.onclick = (e)=>{
 
 zipfile.onchange = (file) => {
   const sectionList = document.getElementById('sectionlist')
+  const ebookIdNode = document.getElementById('filename')
   const ebookNameNode = document.getElementById('title')
-  const bookIdNode = document.getElementById('filename')
   ebookNameNode.innerText = '-'
-  bookIdNode.innerText = '-'
+  ebookIdNode.innerText = '-'
   sectionList.innerHTML = ''
   importZip = new JSZip()
   fileList = []
   const ebookfile = file.target.files[0]
-  bookId = Path.filename(ebookfile.name).replace(/\[\d\]/, '')
+  const bookId = Path.filename(ebookfile.name).replace(/\[\d\]/, '')
   if(bookId.length != 36){
     setstatus('ไม่พบไอดีหนังสือ โปรดอย่าเปลี่ยนชื่อไฟล์!');
     return
   }
-  bookIdNode.innerText = bookId
+  ebookIdNode.innerText = bookId
   setstatus('กำลังอ่านไฟล์หนังสือ...', false)
   importZip.loadAsync(ebookfile).then(async(zip) => {
     let row = 1
@@ -121,9 +120,9 @@ zipfile.onchange = (file) => {
       if(Path.extname(file) == ".opf"){
         opffile = file
         opfxml = await zip.files[file].async('text')
-        const title = /<dc.title>(.*)<\/dc.title>/i.exec(opfxml)
+        const title = /<dc.title>(.*)<\/dc.title>/is.exec(opfxml)
         if (title != null) {
-          ebookNameNode.innerText = title[1]
+          ebookNameNode.innerText = title[1].trim()
         }
         opfxml = opfxml.replace(' linear="no"', '')
       }
@@ -156,6 +155,7 @@ genFileList.onclick = async()=>{
     return
   }
   const port = document.getElementById('port').innerText.trim()
+  const bookId = document.getElementById('filename').innerText.trim()
   if(port == '' || port == '-'){
     setstatus('โปรดระบุพอร์ตเชื่อมต่อ!');
     return
