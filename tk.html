@@ -186,11 +186,12 @@ addHtmlFile.onclick = (e) => {
 
 const addFile = async(htmlfiles)=>{
   const checkList = document.querySelectorAll('.files')
-  Object.keys(htmlfiles.files).map(async(key) => {
+  await Object.keys(checkList).reduce(async (promise, key) => {
+    await promise
     const file = htmlfiles.files[key]
     setstatus('กำลังเพิ่มไฟล์ ' + file.name, false);
-    let htmlfile = fileList.find(e => Path.filename(e).replace('__', '_') == Path.filename(file.name))
-    if(htmlfile){
+    let htmlfile = fileList.find(e => Path.filename(e).replace(/_{2,}/, '_') == Path.filename(file.name))
+    if(htmlfile) {
       checkList.forEach(ckeck=>{
         if(ckeck.dataset.file == htmlfile){
           ckeck.innerText = '✔️'
@@ -207,9 +208,9 @@ const addFile = async(htmlfiles)=>{
         .replace(/width.*scalable=0/, '')
         .replace(/<style.*\n?.*style>/g, '')
         .replace(/(&#8203;|&#13;)/g, '')
-      importZip.file(htmlfile, removeSpace(content))
+      await importZip.file(htmlfile, removeSpace(content))
     }
-  })
+  }, Promise.resolve())
   setstatus('เพิ่มไฟล์แล้ว');
   const addAll = document.querySelectorAll('[data-added="true"]').length
   const info = document.getElementById('info')
