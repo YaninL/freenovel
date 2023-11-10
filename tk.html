@@ -189,7 +189,7 @@ const addFile = async(htmlfiles)=>{
   Object.keys(htmlfiles.files).map(async(key) => {
     const file = htmlfiles.files[key]
     setstatus('กำลังเพิ่มไฟล์ ' + file.name, false);
-    let htmlfile = fileList.find(e => Path.filename(e) == Path.filename(file.name))
+    let htmlfile = fileList.find(e => Path.filename(e).replace('__', '_') == Path.filename(file.name))
     if(htmlfile){
       checkList.forEach(ckeck=>{
         if(ckeck.dataset.file == htmlfile){
