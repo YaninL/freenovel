@@ -48,7 +48,7 @@
           </tr>
           <tr>
             <td class="two wide column"><b>ไอดีหนังสือ</b></td>
-            <td id="filename">-</td>
+            <td id="filename" contenteditable="true">-</td>
           </tr>
           <tr>
             <td><b>ชื่อเรื่อง</b></td>
@@ -90,7 +90,8 @@ document.querySelector('#title').addEventListener('focusout', event => {
 })
 
 document.querySelector('#port').addEventListener('focusout', event => {
-  event.target.innerText = event.target.innerText.replace(/[^\d]+/g, '')
+  const port = event.target.innerText.replace(/[^\d]+/g, '').trim()
+  event.target.innerText = (port == '') ? '-' : port
 })
 
 openfile.onclick = (e)=>{
@@ -186,7 +187,7 @@ addHtmlFile.onclick = (e) => {
 
 const addFile = async(htmlfiles)=>{
   const checkList = document.querySelectorAll('.files')
-  await Object.keys(checkList).reduce(async (promise, key) => {
+  await Object.keys(htmlfiles.files).reduce(async (promise, key) => {
     await promise
     const file = htmlfiles.files[key]
     setstatus('กำลังเพิ่มไฟล์ ' + file.name, false);
@@ -208,7 +209,10 @@ const addFile = async(htmlfiles)=>{
         .replace(/width.*scalable=0/, '')
         .replace(/<style.*\n?.*style>/g, '')
         .replace(/(&#8203;|&#13;)/g, '')
-      await importZip.file(htmlfile, removeSpace(content))
+      importZip.file(htmlfile, removeSpace(content))
+    }else{
+      setstatus('ไฟล์ไม่อยู่ในรายการ ' + file.name, false);
+      console.log(`ไฟล์ไม่อยู่ในรายการ ${file.name}`)
     }
   }, Promise.resolve())
   setstatus('เพิ่มไฟล์แล้ว');
