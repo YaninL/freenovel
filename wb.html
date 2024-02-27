@@ -76,7 +76,8 @@
     let zip = [];
     for(let i=0; i< reader.log.entries.length; i++){
       const mimetype = reader.log.entries[i].response.content.mimeType;
-      if(mimetype != 'image/jpg' || mimetype != 'image/png' ) continue;
+
+      if(mimetype != 'image/jpg' && mimetype != 'image/png' ) continue;      console.log(mimetype)
         const fileName = getFilename(reader.log.entries[i].request.url);
         allImage[fileName] = {
           base64: reader.log.entries[i].response.content.text,
