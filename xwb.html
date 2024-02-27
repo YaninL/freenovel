@@ -10,6 +10,7 @@
 <script src="asset/jquery.min.js"></script>
 <script src="asset/FileSaver.min.js"></script>
 <script src="asset/worker.js"></script>
+<script src="asset/jszip.min.js"></script>
 <title>BOOK☆WALKER : HAR Content Decrypt</title>
 </head>
 <body>
@@ -72,31 +73,53 @@
     $('#output').html('Opening.....');
     const filecontent = file.target.files[0]
     const reader = await new Response(filecontent).json()
+    const time = new Date()
     let allImage = {};
+    let allXhtml = {};
+    let allStyle = {};
     let zip = [];
+    zip.push({name: 'mimetype' , lastModified: time, input: 'application/epub+zip'})
+    zip.push({name: 'META-INF/container.xml' , lastModified: time, input: 
+    `<?xml version="1.0"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+<rootfiles>
+<rootfile full-path="item/standard.opf" media-type="application/oebps-package+xml"/>
+</rootfiles>
+</container>
+`})
     for(let i=0; i< reader.log.entries.length; i++){
+      const fileName = getFilename(reader.log.entries[i].request.url);
       const mimetype = reader.log.entries[i].response.content.mimeType;
-
-      if(mimetype != 'image/jpg' && mimetype != 'image/png' ) continue;      console.log(mimetype)
-        const fileName = getFilename(reader.log.entries[i].request.url);
-        allImage[fileName] = {
-          base64: reader.log.entries[i].response.content.text,
-          mimetype: mimetype
-        };
+      const content = reader.log.entries[i].response.content.text;
+      if(mimetype == 'image/jpg' && mimetype != 'image/png'){
+        allImage[fileName] = {base64: content, mimetype: mimetype};
+      }else if(mimetype == 'application/xhtml+xml'){
+        allXhtml[fileName] = content;
+      }else if(mimetype == 'text/css'){
+        allStyle[fileName] = content;
+      }else{
+        continue
       }
+    }
     allImage = sortObject(allImage);
     $('#output').html(`<h3>Total image : ${Object.keys(allImage).length} files</h3>`);
     for(let key in allImage){
       const blob = b64toBlob(allImage[key]['base64'], allImage[key]['mimetype']);
-      zip.push({name: key, lastModified: new Date(), input: blob})
+      zip.push({name: 'item/image/' + key, lastModified: time, input: blob})
       $('#output').append(`
         <div class="ui small image" style="width:180px;margin-top:30px;text-align: center;">
           <span><img src="${URL.createObjectURL(blob)}"/></span>
           <span>${key}</span>
         </div>`);
     }
+    for(let key in allXhtml){
+      zip.push({name: 'item/xhtml/' + key, lastModified: time, input: allXhtml[key]})
+    }
+    for(let key in allStyle){
+      zip.push({name: 'item/style/' + key, lastModified: time, input: allStyle[key]})
+    }
     const zipBlob = await downloadZip(zip).blob();
-    saveAs(zipBlob, 'saveImage.zip');
+    saveAs(zipBlob, 'saveFile.zip');
   }
   </script>
 </body>
