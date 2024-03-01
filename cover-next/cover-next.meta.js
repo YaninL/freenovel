@@ -31,9 +31,9 @@
 // @match        https://bearbit.co/details.php*
 // @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
-// @require      https://raw.githubusercontent.com/kon3ko/cover-next/master/dist/cover-next.js?version=2.00
-// @updateURL    https://raw.githubusercontent.com/kon3ko/cover-next/master/cover-next.user.js
-// @downloadURL  https://raw.githubusercontent.com/kon3ko/cover-next/master/cover-next.user.js
+// @require      https://freedom-swart.vercel.app/cover-next/cover-next.user.js
+// @updateURL    https://freedom-swart.vercel.app/cover-next/cover-next.meta.js
+// @downloadURL  https://freedom-swart.vercel.app/cover-next/cover-next.meta.js
 // @supportURL   https://github.com/kon3ko/cover-next/issues
 // @connect      img.in.th
 // @connect      bpicc.cc
