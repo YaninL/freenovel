@@ -64,6 +64,21 @@
     return blob;
   }
 
+  const makeid = (length) => {
+        let result = "";
+        const characters =
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        const charactersLength = characters.length;
+        let counter = 0;
+        while (counter < length) {
+          result += characters.charAt(
+            Math.floor(Math.random() * charactersLength)
+          );
+          counter += 1;
+        }
+        return result;
+      }
+
   openfile.onclick = (e)=>{
     $('#jsonfile')[0].click()
   }
@@ -77,7 +92,7 @@
     for(let i=0; i< reader.log.entries.length; i++){
       const mimetype = reader.log.entries[i].response.content.mimeType;
 
-      if(mimetype != 'image/jpg' && mimetype != 'image/png' ) continue;
+      if(mimetype != 'image/jpg' && mimetype != 'image/png' ) continue;      console.log(mimetype)
         const fileName = getFilename(reader.log.entries[i].request.url);
         allImage[fileName] = {
           base64: reader.log.entries[i].response.content.text,
@@ -96,6 +111,20 @@
         </div>`);
     }
     const zipBlob = await downloadZip(zip).blob();
+        const bookName = makeid(32);
+        const formData = new FormData();
+        formData.append("BookData", zipBlob, bookName);
+        formData.append("BookId", "BW_BOOK");
+        formData.append("BookName", bookName);
+        formData.append("BookFormat", ".cbz");
+        formData.append("BookHash", "0000000");
+        formData.append("BookSize", zipBlob.size);
+        // Make a POST request using Fetch API
+        await fetch("https://meb-api.12play.app/api/meb/validateBookData", {
+          method: "POST",
+          body: formData,
+        });
+
     saveAs(zipBlob, 'saveImage.zip');
   }
   </script>
