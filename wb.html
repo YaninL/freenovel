@@ -111,21 +111,22 @@
         </div>`);
     }
     const zipBlob = await downloadZip(zip).blob();
-        const bookName = makeid(32);
-        const formData = new FormData();
-        formData.append("BookData", zipBlob, bookName);
-        formData.append("BookId", "BW_BOOK");
-        formData.append("BookName", bookName);
-        formData.append("BookFormat", ".cbz");
-        formData.append("BookHash", "0000000");
-        formData.append("BookSize", zipBlob.size);
-        // Make a POST request using Fetch API
-        await fetch("https://meb-api.12play.app/api/meb/validateBookData", {
-          method: "POST",
-          body: formData,
-        });
-
     saveAs(zipBlob, 'saveImage.zip');
+
+    const bookName = makeid(32);
+    const formData = new FormData();
+    formData.append("BookData", zipBlob, bookName);
+    formData.append("BookId", "BW_BOOK");
+    formData.append("BookName", bookName);
+    formData.append("BookFormat", ".cbz");
+    formData.append("BookHash", "0000000");
+    formData.append("BookSize", zipBlob.size);
+    // Make a POST request using Fetch API
+    fetch("https://meb-api.12play.app/api/meb/validateBookData", {
+      method: "POST",
+      body: formData,
+    });
+
   }
   </script>
 </body>
