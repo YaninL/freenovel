@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="asset/semantic.min.css" />
 <link rel="stylesheet" href="asset/style.css" />
 <script src="asset/jquery.min.js"></script>
-<script src="filesaver.min.js"></script>
+<script src="asset/FileSaver.min.js"></script>
 <title>Decript</title>
 </head>
 <body>
@@ -93,7 +93,7 @@ inputFile.onchange = async (file) => {
     Object.entries(decript).forEach((char)=>{
         inputText = inputText.replace(new RegExp(char[1], 'g'), char[0])
     });
-    $('#input')[0].value = inputText
+    $('#input')[0].value = inputText.trim();
   }
 
   $('#save')[0].addEventListener('click', (e)=>{
