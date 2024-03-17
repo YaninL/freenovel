@@ -81,6 +81,7 @@
   
   jsonfile.onchange = async(file)=>{
     $('#output').html('Opening.....');
+    $('#image').html('');
     let bookname = '';
     const filecontent = file.target.files[0];
     const reader = await new Response(filecontent).json();
@@ -106,8 +107,9 @@
     allImage = sortObject(allImage);
     $('#output').html(`<h3>Total image : ${Object.keys(allImage).length} files</h3>`);
     $('#output').append(`<p>Creating pdf file form image...</p>`);
-    const pdfDoc = await PDFLib.PDFDocument.create();
 
+
+    const pdfDoc = await PDFLib.PDFDocument.create();
     for(let key in allImage){
       const imageBytes = base64ToArrayBuffer(allImage[key]['base64'])
       let image = null;
@@ -120,7 +122,7 @@
       const page = pdfDoc.addPage([image.width, image.height]);
       page.drawImage(image, {x: 0, y: 0, width: image.width, height: image.height})
       const blob = b64toBlob(allImage[key]['base64'], allImage[key]['mimetype']);
-      $('#image').html(`
+      $('#image').append(`
         <div class="ui small image" style="width:180px;margin-top:30px;text-align: center;">
           <span><img src="${URL.createObjectURL(blob)}"/></span>
           <span>${key}</span>
