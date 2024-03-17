@@ -112,7 +112,7 @@
       const imageBytes = base64ToArrayBuffer(allImage[key]['base64'])
       let image = null;
       if(allImage[key]['mimetype'] == 'image/png'){
-         image = await pdfDoc.embedJpg(imageBytes)
+         image = await pdfDoc.embedPng(imageBytes)
       }else{
          image = await pdfDoc.embedJpg(imageBytes)
       }
