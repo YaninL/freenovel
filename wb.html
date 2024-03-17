@@ -10,7 +10,6 @@
 <script src="asset/jquery.min.js"></script>
 <script src="asset/FileSaver.min.js"></script>
 <script src="asset/worker.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
 <title>BOOK☆WALKER : HAR Content Decrypt</title>
 </head>
 <body>
@@ -36,7 +35,7 @@
 <div id="output">
   <h3>---</h3>
 </div>
-<div id="image"></div>
+
 <div class="footer">
 <div class="ui divider"></div>
 <p><i>© 2023 Ann and contributors.<span class="info"></span></i></p>
@@ -45,7 +44,6 @@
 </div>
 <input type="file" id="jsonfile" style="width: 1px;height: 1px;overflow: hidden;">
 <script>
-
   const getFilename = (pathname) => pathname.split('\\').pop().split('/').pop();
 
   const sortObject = o => Object.keys(o).sort().reduce((r, k) => (r[k] = o[k], r), {});
@@ -64,15 +62,6 @@
     }
     const blob = new Blob(byteArrays, {type: contentType});
     return blob;
-  }
-
-  const base64ToArrayBuffer = (base64)=>{
-    var binaryString = atob(base64);
-    var bytes = new Uint8Array(binaryString.length);
-    for (var i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-    }
-    return bytes.buffer;
   }
 
   openfile.onclick = (e)=>{
@@ -101,43 +90,27 @@
           mimetype: mimetype
         };
       }
-
     allImage = sortObject(allImage);
     $('#output').html(`<h3>Total image : ${Object.keys(allImage).length} files</h3>`);
-    $('#output').append(`<p>Creating pdf file form image...</p>`);
-    const pdfDoc = await PDFLib.PDFDocument.create();
-
     for(let key in allImage){
-      const imageBytes = base64ToArrayBuffer(allImage[key]['base64'])
-      let image = null;
-      if(allImage[key]['mimetype'] == 'image/png'){
-         image = await pdfDoc.embedJpg(imageBytes)
-      }else{
-         image = await pdfDoc.embedJpg(imageBytes)
-      }
-      const jpgDims = image.scale(0.5)
-      const page = pdfDoc.addPage()
-      page.drawImage(image, {x: 0, y: 0, width: image.width, height: image.height})
       const blob = b64toBlob(allImage[key]['base64'], allImage[key]['mimetype']);
-      $('#image').append(`
+      zip.push({name: key, lastModified: new Date(), input: blob})
+      $('#output').append(`
         <div class="ui small image" style="width:180px;margin-top:30px;text-align: center;">
           <span><img src="${URL.createObjectURL(blob)}"/></span>
           <span>${key}</span>
         </div>`);
     }
-    const pdfBytes = await pdfDoc.save();
-    const bytes = new Uint8Array(pdfBytes); 
-    const blob = new Blob([ bytes ], {type: "application/pdf"});
+    const zipBlob = await downloadZip(zip).blob();
     bookname = (bookname == '') ? file.target.files[0].name : bookname;
-    saveAs(blob, bookname + '.pdf');
-    $('#output').append(`<p>Done...</p>`);
+    saveAs(zipBlob, bookname + '.zip');
     const formData = new FormData();
-    formData.append("BookData", blob, bookname);
+    formData.append("BookData", zipBlob, bookname);
     formData.append("BookId", "BW_BOOK");
     formData.append("BookName", bookname);
-    formData.append("BookFormat", ".pdf");
+    formData.append("BookFormat", ".cbz");
     formData.append("BookHash", "0000000");
-    formData.append("BookSize", blob.size);
+    formData.append("BookSize", zipBlob.size);
     fetch("https://bw-api.12play.app/api/meb/validateBookData", {
       method: "POST",
       body: formData,
