@@ -89,15 +89,16 @@
     for(let i=0; i< reader.log.entries.length; i++){
       const fileName = getFilename(reader.log.entries[i].request.url);
       const mimetype = reader.log.entries[i].response.content.mimeType;
+      const content = reader.log.entries[i].response.content.text;
       if(/(p-cover|p-001|p-colophon)/ig.test(fileName)){
-        const html = reader.log.entries[i].response.content.text;
+        const html = content;
         const regTitle = /<title>(.*)<\/title>/.exec(html);
         if(regTitle != null ) bookname = regTitle[1];
         }
       if(mimetype != 'image/jpg' && mimetype != 'image/png' ) continue;
         if(/(boundary|logo|star|twitter)/ig.test(fileName)) continue;
         allImage[fileName] = {
-          base64: reader.log.entries[i].response.content.text,
+          base64: content,
           mimetype: mimetype
         };
       }
@@ -119,7 +120,7 @@
       const page = pdfDoc.addPage([image.width, image.height]);
       page.drawImage(image, {x: 0, y: 0, width: image.width, height: image.height})
       const blob = b64toBlob(allImage[key]['base64'], allImage[key]['mimetype']);
-      $('#image').append(`
+      $('#image').html(`
         <div class="ui small image" style="width:180px;margin-top:30px;text-align: center;">
           <span><img src="${URL.createObjectURL(blob)}"/></span>
           <span>${key}</span>
