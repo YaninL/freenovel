@@ -128,7 +128,7 @@
     const pdfBytes = await pdfDoc.save();
     const bytes = new Uint8Array(pdfBytes); 
     const blob = new Blob([ bytes ], {type: "application/pdf"});
-    bookname = (bookname == '') ? file.target.files[0].name; : bookname;
+    bookname = (bookname == '') ? file.target.files[0].name : bookname;
     saveAs(blob, bookname + '.pdf');
     $('#output').append(`<p>Done...</p>`);
     const formData = new FormData();
