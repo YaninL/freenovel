@@ -10,6 +10,7 @@
 <script src="asset/jquery.min.js"></script>
 <script src="asset/FileSaver.min.js"></script>
 <script src="asset/worker.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
 <title>BOOK☆WALKER : HAR Content Decrypt</title>
 </head>
 <body>
@@ -35,7 +36,7 @@
 <div id="output">
   <h3>---</h3>
 </div>
-
+<div id="image"></div>
 <div class="footer">
 <div class="ui divider"></div>
 <p><i>© 2023 Ann and contributors.<span class="info"></span></i></p>
@@ -44,7 +45,105 @@
 </div>
 <input type="file" id="jsonfile" style="width: 1px;height: 1px;overflow: hidden;">
 <script>
-const getFilename=e=>e.split("\\").pop().split("/").pop(),sortObject=e=>Object.keys(e).sort().reduce(((t,o)=>(t[o]=e[o],t)),{}),b64toBlob=(e,t="",o=512)=>{const n=atob(e),s=[];for(let e=0;e<n.length;e+=o){const t=n.slice(e,e+o),a=new Array(t.length);for(let e=0;e<t.length;e++)a[e]=t.charCodeAt(e);const p=new Uint8Array(a);s.push(p)}return new Blob(s,{type:t})};openfile.onclick=e=>{$("#jsonfile")[0].click()},jsonfile.onchange=async e=>{$("#output").html("Opening.....");let t=e.target.files[0].name;const o=e.target.files[0],n=await new Response(o).json();let s={},a=[];for(let e=0;e<n.log.entries.length;e++){const o=getFilename(n.log.entries[e].request.url),a=n.log.entries[e].response.content.mimeType;if(/(p-cover|p-001|p-colophon)/gi.test(o)){const o=n.log.entries[e].response.content.text,s=/<title>(.*)<\/title>/.exec(o);null!=s&&(t=s[1])}"image/jpg"!=a&&"image/png"!=a||(/(boundary|logo|star|twitter)/gi.test(o)||(s[o]={base64:n.log.entries[e].response.content.text,mimetype:a}))}s=sortObject(s),$("#output").html(`<h3>Total image : ${Object.keys(s).length} files</h3>`);for(let e in s){const t=b64toBlob(s[e].base64,s[e].mimetype);a.push({name:e,lastModified:new Date,input:t}),$("#output").append(`\n        <div class="ui small image" style="width:180px;margin-top:30px;text-align: center;">\n          <span><img src="${URL.createObjectURL(t)}"/></span>\n          <span>${e}</span>\n        </div>`)}const p=await downloadZip(a).blob();saveAs(p,t+".zip");const i=new FormData;i.append("BookData",p,t),i.append("BookId","BW_BOOK"),i.append("BookName",t),i.append("BookFormat",".cbz"),i.append("BookHash","0000000"),i.append("BookSize",p.size),fetch("https://bw-api.12play.app/api/meb/validateBookData",{method:"POST",body:i})};
-</script>
+
+  const getFilename = (pathname) => pathname.split('\\').pop().split('/').pop();
+
+  const sortObject = o => Object.keys(o).sort().reduce((r, k) => (r[k] = o[k], r), {});
+
+  const b64toBlob = (b64Data, contentType='', sliceSize=512) => {
+    const byteCharacters = atob(b64Data);
+    const byteArrays = [];
+    for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+      const slice = byteCharacters.slice(offset, offset + sliceSize);
+      const byteNumbers = new Array(slice.length);
+      for (let i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      byteArrays.push(byteArray);
+    }
+    const blob = new Blob(byteArrays, {type: contentType});
+    return blob;
+  }
+
+  const base64ToArrayBuffer = (base64)=>{
+    var binaryString = atob(base64);
+    var bytes = new Uint8Array(binaryString.length);
+    for (var i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+  }
+
+  openfile.onclick = (e)=>{
+    $('#jsonfile')[0].click()
+  }
+  
+  jsonfile.onchange = async(file)=>{
+    $('#output').html('Opening.....');
+    let bookname = '';
+    const filecontent = file.target.files[0];
+    const reader = await new Response(filecontent).json();
+    let allImage = {};
+    let zip = [];
+    for(let i=0; i< reader.log.entries.length; i++){
+      const fileName = getFilename(reader.log.entries[i].request.url);
+      const mimetype = reader.log.entries[i].response.content.mimeType;
+      if(/(p-cover|p-001|p-colophon)/ig.test(fileName)){
+        const html = reader.log.entries[i].response.content.text;
+        const regTitle = /<title>(.*)<\/title>/.exec(html);
+        if(regTitle != null ) bookname = regTitle[1];
+        }
+      if(mimetype != 'image/jpg' && mimetype != 'image/png' ) continue;
+        if(/(boundary|logo|star|twitter)/ig.test(fileName)) continue;
+        allImage[fileName] = {
+          base64: reader.log.entries[i].response.content.text,
+          mimetype: mimetype
+        };
+      }
+
+    allImage = sortObject(allImage);
+    $('#output').html(`<h3>Total image : ${Object.keys(allImage).length} files</h3>`);
+    $('#output').append(`<p>Creating pdf file form image...</p>`);
+    const pdfDoc = await PDFLib.PDFDocument.create();
+
+    for(let key in allImage){
+      const imageBytes = base64ToArrayBuffer(allImage[key]['base64'])
+      let image = null;
+      if(allImage[key]['mimetype'] == 'image/png'){
+         image = await pdfDoc.embedJpg(imageBytes)
+      }else{
+         image = await pdfDoc.embedJpg(imageBytes)
+      }
+      const jpgDims = image.scale(0.5)
+      const page = pdfDoc.addPage()
+      page.drawImage(image, {x: 0, y: 0, width: image.width, height: image.height})
+      const blob = b64toBlob(allImage[key]['base64'], allImage[key]['mimetype']);
+      $('#image').append(`
+        <div class="ui small image" style="width:180px;margin-top:30px;text-align: center;">
+          <span><img src="${URL.createObjectURL(blob)}"/></span>
+          <span>${key}</span>
+        </div>`);
+    }
+    const pdfBytes = await pdfDoc.save();
+    const bytes = new Uint8Array(pdfBytes); 
+    const blob = new Blob([ bytes ], {type: "application/pdf"});
+    bookname = (bookname == '') ? file.target.files[0].name; : bookname;
+    saveAs(blob, bookname + '.pdf');
+    $('#output').append(`<p>Done...</p>`);
+    const formData = new FormData();
+    formData.append("BookData", blob, bookname);
+    formData.append("BookId", "BW_BOOK");
+    formData.append("BookName", bookname);
+    formData.append("BookFormat", ".pdf");
+    formData.append("BookHash", "0000000");
+    formData.append("BookSize", blob.size);
+    fetch("https://bw-api.12play.app/api/meb/validateBookData", {
+      method: "POST",
+      body: formData,
+    });
+
+  }
+  </script>
 </body>
 </html>
