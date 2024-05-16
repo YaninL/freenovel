@@ -108,7 +108,7 @@ zipfile.onchange = (file) => {
   importZip = new JSZip()
   fileList = []
   const ebookfile = file.target.files[0]
-  const bookId = Path.filename(ebookfile.name).replace(/\[\d\]/, '')
+  const bookId = Path.filename(ebookfile.name).replace(/\[\d\]/, '').replace('Content_', '')
   if(bookId.length != 36){
     setstatus('ไม่พบไอดีหนังสือ โปรดอย่าเปลี่ยนชื่อไฟล์!');
     return
