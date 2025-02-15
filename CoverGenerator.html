@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keygen Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+    <h2>Serial Key Generator</h2>
+    
+    <label for="username">Enter Username:</label>
+    <input type="text" id="username">
+    
+    <button onclick="generateKey()">Generate Key</button>
+    
+    <p>Generated Key:</p>
+    <textarea id="keyOutput" rows="4" cols="50"></textarea>
+
+    <script>
+        function generateKey() {
+            const username = document.getElementById("username").value.trim();
+            if (!username) {
+                alert("Please enter a username!");
+                return;
+            }
+
+            // สร้างข้อมูล JSON และเข้ารหัส
+            const data = JSON.stringify({ t: Number.MAX_VALUE, u: username });
+            const encrypted = CryptoJS.AES.encrypt(data, username).toString();
+
+            // แสดงผลลัพธ์
+            document.getElementById("keyOutput").value = encrypted;
+        }
+    </script>
+</body>
+</html>
