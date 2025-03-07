@@ -1,3 +1,12 @@
+/*
+Revision 1:
+ - รุ่นแรกที่มีการถอดรหัสพื้นฐานและการแยกข้อมูลภาพปริศนา
+ 
+Revision 2: 
+ - เพิ่มการตรวจสอบความถูกต้องใน parseDimension และ getPuzzleImageData
+ - ยกระดับประสิทธิภาพและความกระชับใน replaceEncodedKeywords
+*/
+
 const ObfuscatedDecoder = {
   deobfuscator (obfuscatedCode) {
     if (!obfuscatedCode) return null;
@@ -10,19 +19,17 @@ const ObfuscatedDecoder = {
   },
   replaceEncodedKeywords (sourceCode, keywords, baseRadix) {
     const encodeBase = (number) => (number > 35) ? String.fromCharCode(number + 29) : number.toString(36);
-    let decodedCode = sourceCode;
-    for (let i = 0; i < baseRadix; i++) {
-      if (keywords[i]) {
-        decodedCode = decodedCode.replace(new RegExp(`\\b${encodeBase(i)}\\b`, 'g'), keywords[i]);
-      }
-    }
-    return decodedCode;
+    const codeMap = {};
+    keywords.slice(0, baseRadix).forEach((keyword, i) => keyword && (codeMap[encodeBase(i)] = keyword));
+    return sourceCode.replace(/\b\w+\b/g, match => codeMap[match] || match);
   },
   getPuzzleImageData (obfuscatedCode) {
     const decoded = this.deobfuscator(obfuscatedCode);
     if (!decoded) return false;
     const puzzleImageData = this.parsePuzzleImageData(decoded.decodedCode);
-    return puzzleImageData ? { ...this.parseDimension(puzzleImageData), puzzleData: puzzleImageData } : false;
+    if (!puzzleImageData) return false;
+    const dimensions = this.parseDimension(puzzleImageData);
+    return dimensions ? { ...dimensions, puzzleData: puzzleImageData } : false;
   },
   parsePuzzleImageData (code) {
     const match = code.match(/var\s+sovleImage=\[(.*?)\];/is);
@@ -32,11 +39,12 @@ const ObfuscatedDecoder = {
     if (!Array.isArray(data) || !data.length) return false;
     const widths = data.map(row => row[0]).filter(Boolean);
     const heights = data.map(row => row[1]).filter(Boolean);
-    return {
-      pieceWidth: Math.min(...widths),
-      pieceHeight: Math.min(...heights),
-      imageWidth: Math.max(...widths) + Math.min(...widths),
-      imageHeight: Math.max(...heights) + Math.min(...heights)
+    const result = {
+        pieceWidth: Math.min(...widths),
+        pieceHeight: Math.min(...heights),
+        imageWidth: Math.max(...widths) + Math.min(...widths),
+        imageHeight: Math.max(...heights) + Math.min(...heights)
     };
+    return Object.values(result).some(value => isNaN(value) || value === Infinity || value === -Infinity) ? false : result;
   }
 };
