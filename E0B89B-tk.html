@@ -226,31 +226,58 @@
             
             const testFile = fileList[0];
             let foundPort = null;
+            const globalController = new AbortController();
             
-            for (let i = 30000; i <= 50000; i += 100) {
-                setstatus(`กำลังสแกนพอร์ต... (${i}-50000)`, false);
-                const promises = [];
-                for (let j = 0; j < 100 && i + j <= 50000; j++) {
-                    const port = i + j;
-                    const url = `http://127.0.0.1:${port}/${bookId}/${testFile}`;
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 1000); 
-                    promises.push(
-                        fetch(url, { signal: controller.signal })
+            setstatus('กำลังสแกนพอร์ต 30000-50000 แบบรวดเร็ว...', false);
+            
+            let currentPort = 30000;
+            const maxPort = 50000;
+            const concurrency = 200; // จำกัด connection พร้อมกันเพื่อป้องกัน browser ค้าง
+            let active = 0;
+            
+            await new Promise(resolve => {
+                const next = () => {
+                    if (foundPort || currentPort > maxPort) {
+                        if (active === 0) resolve();
+                        return;
+                    }
+                    
+                    while (active < concurrency && currentPort <= maxPort && !foundPort) {
+                        const port = currentPort++;
+                        active++;
+                        
+                        if (port % 1000 === 0) {
+                            setstatus(`กำลังสแกนพอร์ต... (${port}-50000)`, false);
+                        }
+                        
+                        const url = `http://127.0.0.1:${port}/${bookId}/${testFile}`;
+                        const localController = new AbortController();
+                        const timeoutId = setTimeout(() => localController.abort(), 150); // timeout 150ms ต่อพอร์ต
+                        
+                        const onGlobalAbort = () => localController.abort();
+                        globalController.signal.addEventListener('abort', onGlobalAbort);
+                        
+                        fetch(url, { signal: localController.signal })
                             .then(res => {
                                 clearTimeout(timeoutId);
-                                return res.ok ? port : null;
+                                globalController.signal.removeEventListener('abort', onGlobalAbort);
+                                if (res.ok && !foundPort) {
+                                    foundPort = port;
+                                    globalController.abort(); // หยุดสแกนพอร์ตอื่นทันทีที่เจอ
+                                }
                             })
                             .catch(() => {
                                 clearTimeout(timeoutId);
-                                return null;
+                                globalController.signal.removeEventListener('abort', onGlobalAbort);
                             })
-                    );
-                }
-                const results = await Promise.all(promises);
-                foundPort = results.find(p => p !== null);
-                if (foundPort) break;
-            }
+                            .finally(() => {
+                                active--;
+                                next(); // ดึงพอร์ตถัดไปมาสแกนต่อทันทีโดยไม่ต้องรอให้จบทีละชุด
+                            });
+                    }
+                };
+                next();
+            });
             
             if (foundPort) {
                 document.getElementById('port').innerText = foundPort;
