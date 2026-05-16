@@ -223,40 +223,40 @@
                 setstatus('ไม่พบไอดีหนังสือ!');
                 return
             }
-            
+
             const testFile = fileList[0];
             let foundPort = null;
             const globalController = new AbortController();
-            
+
             setstatus('กำลังสแกนพอร์ต 30000-55000 แบบรวดเร็ว...', false);
-            
+
             let currentPort = 30000;
             const maxPort = 55000;
             const concurrency = 50; // ลดจำนวน connection พร้อมกันลงเพื่อไม่ให้ Browser คิวงานจน Timeout ไปเอง
             let active = 0;
-            
+
             await new Promise(resolve => {
                 const next = () => {
                     if (foundPort || currentPort > maxPort) {
                         if (active === 0) resolve();
                         return;
                     }
-                    
+
                     while (active < concurrency && currentPort <= maxPort && !foundPort) {
                         const port = currentPort++;
                         active++;
-                        
+
                         if (port % 500 === 0) {
-                            setstatus(`กำลังสแกนพอร์ต... (${port}-50000)`, false);
+                            setstatus(`กำลังสแกนพอร์ต... (${port}-55000)`, false);
                         }
-                        
+
                         const url = `http://127.0.0.1:${port}/${bookId}/${testFile}`;
                         const localController = new AbortController();
-                        const timeoutId = setTimeout(() => localController.abort(), 2000); // เพิ่ม Timeout เป็น 2 วิ เผื่อ Server ตอบช้า
-                        
+                        const timeoutId = setTimeout(() => localController.abort(), 1000); // เพิ่ม Timeout เป็น 2 วิ เผื่อ Server ตอบช้า
+
                         const onGlobalAbort = () => localController.abort();
                         globalController.signal.addEventListener('abort', onGlobalAbort);
-                        
+
                         fetch(url, { signal: localController.signal })
                             .then(res => {
                                 clearTimeout(timeoutId);
@@ -278,7 +278,7 @@
                 };
                 next();
             });
-            
+
             if (foundPort) {
                 document.getElementById('port').innerText = foundPort;
                 setstatus(`พบพอร์ตที่ใช้งานได้: ${foundPort}`);
