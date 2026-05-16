@@ -228,11 +228,11 @@
             let foundPort = null;
             const globalController = new AbortController();
             
-            setstatus('กำลังสแกนพอร์ต 30000-50000 แบบรวดเร็ว...', false);
+            setstatus('กำลังสแกนพอร์ต 30000-55000 แบบรวดเร็ว...', false);
             
             let currentPort = 30000;
-            const maxPort = 50000;
-            const concurrency = 200; // จำกัด connection พร้อมกันเพื่อป้องกัน browser ค้าง
+            const maxPort = 55000;
+            const concurrency = 50; // ลดจำนวน connection พร้อมกันลงเพื่อไม่ให้ Browser คิวงานจน Timeout ไปเอง
             let active = 0;
             
             await new Promise(resolve => {
@@ -246,13 +246,13 @@
                         const port = currentPort++;
                         active++;
                         
-                        if (port % 1000 === 0) {
+                        if (port % 500 === 0) {
                             setstatus(`กำลังสแกนพอร์ต... (${port}-50000)`, false);
                         }
                         
                         const url = `http://127.0.0.1:${port}/${bookId}/${testFile}`;
                         const localController = new AbortController();
-                        const timeoutId = setTimeout(() => localController.abort(), 150); // timeout 150ms ต่อพอร์ต
+                        const timeoutId = setTimeout(() => localController.abort(), 2000); // เพิ่ม Timeout เป็น 2 วิ เผื่อ Server ตอบช้า
                         
                         const onGlobalAbort = () => localController.abort();
                         globalController.signal.addEventListener('abort', onGlobalAbort);
