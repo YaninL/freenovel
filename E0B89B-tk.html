@@ -27,7 +27,8 @@
                         <div class="item active" id="status" style="display: none;"></div>
                         <div class="menu right">
                             <a class="item" id="openfile"><i class="book icon"></i>เปิดหนังสือ</a>
-                            <a class="item" id="fetchFiles"><i class="cloud download icon"></i>ดึงข้อมูล</a>
+                            <a class="item" id="scanPort"><i class="search icon"></i>สแกนพอร์ต</a>
+                            <a class="item" id="fetchFiles"><i class="cloud download icon"></i>ดึงข้อมูลอัตโนมัติ</a>
                             <a class="item" id="saveFile"><i class="save icon"></i>บันทึกหนังสือ</a>
                         </div>
                     </div>
@@ -210,6 +211,53 @@
             const info = document.getElementById('info')
             info.innerText = `${addAll}/${fileList.length}`
             setstatus('ดึงข้อมูลเสร็จสิ้น!')
+        }
+
+        scanPort.onclick = async () => {
+            if (!fileList || !importZip) {
+                setstatus('โปรดเปิดไฟล์หนังสือก่อน!');
+                return
+            }
+            const bookId = document.getElementById('filename').innerText.trim()
+            if (bookId == '' || bookId == '-') {
+                setstatus('ไม่พบไอดีหนังสือ!');
+                return
+            }
+            
+            const testFile = fileList[0];
+            let foundPort = null;
+            
+            for (let i = 30000; i <= 50000; i += 100) {
+                setstatus(`กำลังสแกนพอร์ต... (${i}-50000)`, false);
+                const promises = [];
+                for (let j = 0; j < 100 && i + j <= 50000; j++) {
+                    const port = i + j;
+                    const url = `http://127.0.0.1:${port}/${bookId}/${testFile}`;
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 1000); 
+                    promises.push(
+                        fetch(url, { signal: controller.signal })
+                            .then(res => {
+                                clearTimeout(timeoutId);
+                                return res.ok ? port : null;
+                            })
+                            .catch(() => {
+                                clearTimeout(timeoutId);
+                                return null;
+                            })
+                    );
+                }
+                const results = await Promise.all(promises);
+                foundPort = results.find(p => p !== null);
+                if (foundPort) break;
+            }
+            
+            if (foundPort) {
+                document.getElementById('port').innerText = foundPort;
+                setstatus(`พบพอร์ตที่ใช้งานได้: ${foundPort}`);
+            } else {
+                setstatus('สแกนไม่พบพอร์ตที่เปิดอยู่ หรือไม่พบไฟล์หนังสือ!');
+            }
         }
 
         saveFile.onclick = async (e) => {
